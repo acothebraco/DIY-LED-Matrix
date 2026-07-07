@@ -8,7 +8,7 @@
 #define PANEL_RES_Y 32
 #define PANEL_CHAIN 1
 
-#define FIRMWARE_VERSION "0.8.0"
+#define FIRMWARE_VERSION "0.9.0"
 
 // WLAN Access Point
 const char *AP_SSID = "SmartFix-Matrix";
@@ -54,6 +54,8 @@ const unsigned long modeInterval = 10000;
 // -----------------------------
 String scrollText = "ELEKTRONIKSERVICE  -  REPARATUR  -  KONSOLEN  -  SMARTFIX  ";
 const uint16_t MAX_SCROLL_TEXT_LEN = 160;
+String logoText = "SmartFix";
+const uint16_t MAX_LOGO_TEXT_LEN = 32;
 int16_t scrollX = PANEL_RES_X;
 unsigned long lastScrollUpdate = 0;
 uint16_t scrollInterval = 35;  // kleiner = schneller
@@ -140,6 +142,18 @@ void loadSettings() {
     scrollText = scrollText.substring(0, MAX_SCROLL_TEXT_LEN);
   }
 
+  logoText = prefs.getString("logoText", logoText);
+
+logoText.trim();
+
+if (logoText.length() == 0) {
+  logoText = "SmartFix";
+}
+
+if (logoText.length() > MAX_LOGO_TEXT_LEN) {
+  logoText = logoText.substring(0, MAX_LOGO_TEXT_LEN);
+}
+
   int savedMode = prefs.getInt("mode", MODE_SCROLL_TEXT);
   if (savedMode < MODE_SCROLL_TEXT || savedMode > MODE_RANDOM_FX) {
     savedMode = MODE_SCROLL_TEXT;
@@ -162,6 +176,8 @@ void loadSettings() {
   Serial.println(getModeName(currentMode));
   Serial.print("Auto Demo: ");
   Serial.println(autoModeDemo ? "ON" : "OFF");
+  Serial.print("Logo Text: ");
+  Serial.println(logoText);
 }
 
 void saveModeSettings() {
@@ -198,6 +214,13 @@ void saveScrollTextSetting() {
 
   Serial.print("Scroll text saved: ");
   Serial.println(scrollText);
+}
+
+void saveLogoTextSetting() {
+  prefs.putString("logoText", logoText);
+
+  Serial.print("Logo text saved: ");
+  Serial.println(logoText);
 }
 
 void setMode(DisplayMode newMode, bool saveSetting = true) {
@@ -262,15 +285,29 @@ void drawHeader() {
   display->setTextWrap(false);
   display->setTextSize(1);
 
-  display->setCursor(2, 3);
-  display->setTextColor(green);
-  display->print("Smart");
+  // Standard-Branding: Smart grün, Fix blau
+  if (logoText == "SmartFix" || logoText == "smartfix" || logoText == "SMARTFIX") {
+    display->setCursor(2, 3);
+    display->setTextColor(green);
+    display->print("Smart");
 
-  display->setCursor(34, 3);
-  display->setTextColor(blue);
-  display->print("Fix");
+    display->setCursor(34, 3);
+    display->setTextColor(blue);
+    display->print("Fix");
+  } else {
+    int16_t logoWidth = getTextPixelWidth(logoText);
+    int16_t logoX = (PANEL_RES_X - logoWidth) / 2;
 
-  display->drawLine(0, 13, 63, 13, blue);
+    if (logoX < 0) {
+      logoX = 0;
+    }
+
+    display->setCursor(logoX, 3);
+    display->setTextColor(green);
+    display->print(logoText);
+  }
+
+  // Blaue Trennlinie bewusst entfernt
 }
 
 // -----------------------------
@@ -466,7 +503,12 @@ String htmlPage() {
   page += ".btn.green{background:#16a34a;}";
   page += ".btn.green:hover{background:#15803d;}";
   page += ".small{font-size:13px;color:#94a3b8;margin-top:18px;text-align:center;}";
-  page += "</style></head><body>";
+  page += "</style>";
+  page += "<script>";
+  page += "window.addEventListener('beforeunload',function(){sessionStorage.setItem('sf_scroll',window.scrollY);});";
+  page += "window.addEventListener('load',function(){var y=sessionStorage.getItem('sf_scroll');if(y!==null){window.scrollTo(0,parseInt(y));sessionStorage.removeItem('sf_scroll');}});";
+  page += "</script>";
+  page += "</head><body>";
   page += "<div class='wrap'>";
   page += "<div class='card'>";
   page += "<h1>SmartFix Matrix</h1>";
@@ -512,6 +554,17 @@ String htmlPage() {
   page += "<button class='btn green' type='submit' style='border:0;width:100%;cursor:pointer;'>Text speichern</button>";
   page += "</form>";
   page += "<div class='sub' style='margin-top:12px;'>Maximal 160 Zeichen. Umlaute testen wir sp&auml;ter mit eigener Font-Unterst&uuml;tzung.</div>";
+  page += "</div>";
+
+  page += "<div class='card' id='logo-text'>";
+  page += "<h2>Logo Text</h2>";
+  page += "<form action='/set-logo-text' method='GET'>";
+  page += "<input name='t' maxlength='32' value='";
+  page += htmlEscape(logoText);
+  page += "' style='width:100%;box-sizing:border-box;background:#020617;color:#e5e7eb;border:1px solid #334155;border-radius:12px;padding:14px;font-size:16px;margin-bottom:12px;'>";
+  page += "<button class='btn green' type='submit' style='border:0;width:100%;cursor:pointer;'>Logo Text speichern</button>";
+  page += "</form>";
+  page += "<div class='sub' style='margin-top:12px;'>Dieser Text wird oben auf der Matrix angezeigt. Standard: SmartFix.</div>";
   page += "</div>";
 
   page += "<div class='card'>";
@@ -690,6 +743,34 @@ void handleSetText() {
   redirectHome();
 }
 
+void handleSetLogoText() {
+  if (server.hasArg("t")) {
+    String newLogoText = server.arg("t");
+
+    newLogoText.trim();
+
+    if (newLogoText.length() == 0) {
+      newLogoText = "SmartFix";
+    }
+
+    if (newLogoText.length() > MAX_LOGO_TEXT_LEN) {
+      newLogoText = newLogoText.substring(0, MAX_LOGO_TEXT_LEN);
+    }
+
+    logoText = newLogoText;
+
+    saveLogoTextSetting();
+
+    scrollX = PANEL_RES_X;
+    display->clearScreen();
+
+    Serial.print("New logo text from web: ");
+    Serial.println(logoText);
+  }
+
+  redirectHome();
+}
+
 void handleFactoryReset() {
   prefs.clear();
 
@@ -712,6 +793,7 @@ void setupWebServer() {
   server.on("/speed", handleSpeed);
   server.on("/text-color", handleTextColor);
   server.on("/set-text", handleSetText);
+  server.on("/set-logo-text", handleSetLogoText);
   server.on("/factory-reset", handleFactoryReset);
 
   server.onNotFound([]() {

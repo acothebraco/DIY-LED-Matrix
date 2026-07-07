@@ -1,11 +1,19 @@
 #include <Arduino.h>
+#include <WiFi.h>
+#include <WebServer.h>
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 
 #define PANEL_RES_X 64
 #define PANEL_RES_Y 32
 #define PANEL_CHAIN 1
 
-#define FIRMWARE_VERSION "0.3.0"
+#define FIRMWARE_VERSION "0.4.0"
+
+// WLAN Access Point
+const char *AP_SSID = "SmartFix-Matrix";
+const char *AP_PASSWORD = "smartfix123";
+
+WebServer server(80);
 
 MatrixPanel_I2S_DMA *display = nullptr;
 
@@ -16,6 +24,9 @@ uint16_t green;
 uint16_t blue;
 uint16_t red;
 uint16_t yellow;
+
+// Helligkeit
+uint8_t matrixBrightness = 70;
 
 // -----------------------------
 // Display Modes
@@ -29,8 +40,6 @@ enum DisplayMode {
 
 DisplayMode currentMode = MODE_SCROLL_TEXT;
 
-// Demo-Automatik: schaltet alle paar Sekunden den Modus weiter.
-// Später ersetzen wir das durch Webinterface-Auswahl.
 bool autoModeDemo = true;
 unsigned long lastModeChange = 0;
 const unsigned long modeInterval = 10000;
@@ -104,7 +113,7 @@ void initMatrix() {
     }
   }
 
-  display->setBrightness8(70);
+  display->setBrightness8(matrixBrightness);
   display->clearScreen();
 
   black  = display->color565(0, 0, 0);
@@ -209,7 +218,7 @@ void drawPixelArt() {
   display->fillRect(4, 12, 20, 4, red);
   display->fillRect(8, 16, 12, 4, red);
   display->fillRect(12, 20, 4, 4, red);
-
+  
   // Text rechts
   display->setTextWrap(false);
   display->setTextSize(1);
@@ -228,7 +237,6 @@ void drawPixelArt() {
 void drawRandomFx() {
   unsigned long now = millis();
 
-  // alle paar Sekunden Bildschirm löschen
   if (now - lastFullRedraw > 3000) {
     lastFullRedraw = now;
     display->fillScreen(black);
@@ -286,6 +294,167 @@ void handleAutoModeDemo() {
 }
 
 // -----------------------------
+// Webinterface
+// -----------------------------
+String htmlButton(const String &label, const String &url) {
+  return "<a class='btn' href='" + url + "'>" + label + "</a>";
+}
+
+String htmlPage() {
+  String autoStatus = autoModeDemo ? "AKTIV" : "AUS";
+
+  String page = "";
+  page += "<!DOCTYPE html><html lang='de'><head>";
+  page += "<meta charset='UTF-8'>";
+  page += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+  page += "<title>SmartFix Matrix</title>";
+  page += "<style>";
+  page += "body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#0b0f14;color:#e5e7eb;}";
+  page += ".wrap{max-width:760px;margin:0 auto;padding:22px;}";
+  page += ".card{background:#111827;border:1px solid #1f2937;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);}";
+  page += "h1{margin:0 0 6px;font-size:28px;color:#22c55e;}";
+  page += "h2{margin:0 0 14px;font-size:18px;color:#60a5fa;}";
+  page += ".sub{color:#9ca3af;margin-bottom:18px;}";
+  page += ".status{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}";
+  page += ".pill{background:#020617;border:1px solid #334155;border-radius:12px;padding:10px;}";
+  page += ".label{font-size:12px;color:#94a3b8;}";
+  page += ".value{font-size:17px;font-weight:bold;color:#f8fafc;margin-top:4px;}";
+  page += ".buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;}";
+  page += ".btn{display:block;text-align:center;text-decoration:none;background:#2563eb;color:white;padding:14px;border-radius:12px;font-weight:bold;}";
+  page += ".btn:hover{background:#1d4ed8;}";
+  page += ".btn.green{background:#16a34a;}";
+  page += ".btn.green:hover{background:#15803d;}";
+  page += ".small{font-size:13px;color:#94a3b8;margin-top:18px;text-align:center;}";
+  page += "</style></head><body>";
+  page += "<div class='wrap'>";
+  page += "<div class='card'>";
+  page += "<h1>SmartFix Matrix</h1>";
+  page += "<div class='sub'>ESP32-S3 RGB Matrix Control Panel</div>";
+  page += "<div class='status'>";
+  page += "<div class='pill'><div class='label'>Firmware</div><div class='value'>v";
+  page += FIRMWARE_VERSION;
+  page += "</div></div>";
+  page += "<div class='pill'><div class='label'>Mode</div><div class='value'>";
+  page += getModeName(currentMode);
+  page += "</div></div>";
+  page += "<div class='pill'><div class='label'>Auto Demo</div><div class='value'>";
+  page += autoStatus;
+  page += "</div></div>";
+  page += "<div class='pill'><div class='label'>Brightness</div><div class='value'>";
+  page += String(matrixBrightness);
+  page += " / 255</div></div>";
+  page += "</div></div>";
+
+  page += "<div class='card'>";
+  page += "<h2>Modus ausw&auml;hlen</h2>";
+  page += "<div class='buttons'>";
+  page += htmlButton("Laufschrift", "/mode?m=0");
+  page += htmlButton("Static Logo", "/mode?m=1");
+  page += htmlButton("Pixel Art", "/mode?m=2");
+  page += htmlButton("Random FX", "/mode?m=3");
+  page += "</div></div>";
+
+  page += "<div class='card'>";
+  page += "<h2>Auto Demo</h2>";
+  page += "<div class='buttons'>";
+  page += "<a class='btn green' href='/auto'>Auto Demo starten</a>";
+  page += htmlButton("Refresh", "/");
+  page += "</div></div>";
+
+  page += "<div class='card'>";
+  page += "<h2>Helligkeit</h2>";
+  page += "<div class='buttons'>";
+  page += htmlButton("25%", "/brightness?v=40");
+  page += htmlButton("50%", "/brightness?v=80");
+  page += htmlButton("75%", "/brightness?v=130");
+  page += htmlButton("100%", "/brightness?v=200");
+  page += "</div></div>";
+
+  page += "<div class='small'>SmartFix Elektronikservice &bull; Designed for 64x32 HUB75 RGB Matrix</div>";
+  page += "</div></body></html>";
+
+  return page;
+}
+
+void handleRoot() {
+  server.send(200, "text/html", htmlPage());
+}
+
+void redirectHome() {
+  server.sendHeader("Location", "/");
+  server.send(303);
+}
+
+void handleModeChange() {
+  if (server.hasArg("m")) {
+    int mode = server.arg("m").toInt();
+
+    if (mode >= MODE_SCROLL_TEXT && mode <= MODE_RANDOM_FX) {
+      autoModeDemo = false;
+      setMode((DisplayMode)mode);
+    }
+  }
+
+  redirectHome();
+}
+
+void handleAutoDemo() {
+  autoModeDemo = true;
+  lastModeChange = millis();
+  Serial.println("Auto mode demo enabled from web");
+  redirectHome();
+}
+
+void handleBrightness() {
+  if (server.hasArg("v")) {
+    int value = server.arg("v").toInt();
+
+    if (value < 5) value = 5;
+    if (value > 255) value = 255;
+
+    matrixBrightness = value;
+    display->setBrightness8(matrixBrightness);
+
+    Serial.print("Brightness changed to: ");
+    Serial.println(matrixBrightness);
+  }
+
+  redirectHome();
+}
+
+void setupWebServer() {
+  server.on("/", handleRoot);
+  server.on("/mode", handleModeChange);
+  server.on("/auto", handleAutoDemo);
+  server.on("/brightness", handleBrightness);
+
+  server.onNotFound([]() {
+    server.send(404, "text/plain", "404 - Not found");
+  });
+
+  server.begin();
+  Serial.println("Webserver started");
+}
+
+void setupWiFiAP() {
+  WiFi.mode(WIFI_AP);
+
+  bool result = WiFi.softAP(AP_SSID, AP_PASSWORD);
+
+  if (result) {
+    Serial.println("WiFi Access Point started");
+    Serial.print("SSID: ");
+    Serial.println(AP_SSID);
+    Serial.print("Password: ");
+    Serial.println(AP_PASSWORD);
+    Serial.print("IP address: ");
+    Serial.println(WiFi.softAPIP());
+  } else {
+    Serial.println("ERROR: WiFi Access Point failed!");
+  }
+}
+
+// -----------------------------
 // Serielle Steuerung
 // -----------------------------
 void handleSerialCommands() {
@@ -326,13 +495,7 @@ void setup() {
   Serial.println("SMARTFIX MATRIX");
   Serial.print("Firmware v");
   Serial.println(FIRMWARE_VERSION);
-  Serial.println("Mode System enabled");
-  Serial.println("Serial commands:");
-  Serial.println("0 = Scroll Text");
-  Serial.println("1 = Static Logo");
-  Serial.println("2 = Pixel Art");
-  Serial.println("3 = Random FX");
-  Serial.println("A = Auto Demo");
+  Serial.println("WiFi AP + Webinterface enabled");
   Serial.println("================================");
 
   randomSeed(esp_random());
@@ -341,11 +504,16 @@ void setup() {
 
   Serial.println("Matrix initialized OK");
 
+  setupWiFiAP();
+  setupWebServer();
+
   setMode(MODE_SCROLL_TEXT);
   lastModeChange = millis();
 }
 
 void loop() {
+  server.handleClient();
+
   handleSerialCommands();
   handleAutoModeDemo();
 

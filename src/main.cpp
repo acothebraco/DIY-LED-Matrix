@@ -8,7 +8,7 @@
 #define PANEL_RES_Y 32
 #define PANEL_CHAIN 1
 
-#define FIRMWARE_VERSION "0.7.0"
+#define FIRMWARE_VERSION "0.8.0"
 
 // WLAN Access Point
 const char *AP_SSID = "SmartFix-Matrix";
@@ -30,6 +30,8 @@ uint16_t yellow;
 
 // Helligkeit
 uint8_t matrixBrightness = 70;
+// Laufschrift-Farbe
+uint8_t scrollTextColorMode = 0; // 0=Weiss, 1=Gruen, 2=Blau, 3=Gelb, 4=Rot
 
 // -----------------------------
 // Display Modes
@@ -91,10 +93,37 @@ const char *getSpeedName() {
   return "MITTEL";
 }
 
+const char *getScrollTextColorName() {
+  switch (scrollTextColorMode) {
+    case 0: return "WEISS";
+    case 1: return "GRUEN";
+    case 2: return "BLAU";
+    case 3: return "GELB";
+    case 4: return "ROT";
+    default: return "WEISS";
+  }
+}
+
+uint16_t getScrollTextColor() {
+  switch (scrollTextColorMode) {
+    case 0: return white;
+    case 1: return green;
+    case 2: return blue;
+    case 3: return yellow;
+    case 4: return red;
+    default: return white;
+  }
+}
+
 void loadSettings() {
   prefs.begin(PREF_NAMESPACE, false);
 
   matrixBrightness = prefs.getUChar("bright", 70);
+  scrollTextColorMode = prefs.getUChar("txtColor", 0);
+
+  if (scrollTextColorMode > 4) {
+  scrollTextColorMode = 0;
+}
   scrollInterval = prefs.getUShort("speed", 35);
 
   if (scrollInterval < 5 || scrollInterval > 200) {
@@ -122,6 +151,8 @@ void loadSettings() {
   Serial.println("Settings loaded:");
   Serial.print("Brightness: ");
   Serial.println(matrixBrightness);
+  Serial.print("Text Color: ");
+  Serial.println(getScrollTextColorName());
   Serial.print("Scroll Speed: ");
   Serial.print(scrollInterval);
   Serial.println(" ms");
@@ -153,6 +184,13 @@ void saveSpeedSetting() {
   Serial.print("Scroll speed saved: ");
   Serial.print(scrollInterval);
   Serial.println(" ms");
+}
+
+void saveTextColorSetting() {
+  prefs.putUChar("txtColor", scrollTextColorMode);
+
+  Serial.print("Text color saved: ");
+  Serial.println(getScrollTextColorName());
 }
 
 void saveScrollTextSetting() {
@@ -209,10 +247,12 @@ void initMatrix() {
 
   black  = display->color565(0, 0, 0);
   white  = display->color565(255, 255, 255);
-  green  = display->color565(0, 255, 80);
-  blue   = display->color565(0, 120, 255);
-  red    = display->color565(255, 0, 0);
-  yellow = display->color565(255, 180, 0);
+
+  // Dein Panel hat Grün/Blau vertauscht
+  green  = display->color565(0, 80, 255);     // echtes Grün
+  blue   = display->color565(0, 255, 120);    // echtes Blau
+  red    = display->color565(255, 0, 0);      // Rot
+  yellow = display->color565(255, 0, 180);    // echtes Gelb
 }
 
 // -----------------------------
@@ -247,7 +287,7 @@ void drawScrollingText() {
 
     display->setTextWrap(false);
     display->setTextSize(1);
-    display->setTextColor(white);
+    display->setTextColor(getScrollTextColor());
     display->setCursor(scrollX, 20);
     display->print(scrollText);
 
@@ -450,6 +490,9 @@ String htmlPage() {
   page += String(scrollInterval);
   page += " ms</div></div>";
   page += "</div></div>";
+  page += "<div class='pill'><div class='label'>Textfarbe</div><div class='value'>";
+  page += getScrollTextColorName();
+  page += "</div></div>";
 
   page += "<div class='card'>";
   page += "<h2>Modus ausw&auml;hlen</h2>";
@@ -487,6 +530,19 @@ String htmlPage() {
   page += htmlButton("Turbo", "/speed?v=8");
   page += "</div>";
   page += "<div class='sub' style='margin-top:12px;'>Kleiner Wert = schnellere Laufschrift.</div>";
+  page += "</div>";
+
+  page += "<div class='card'>";
+  page += "<h2>Laufschrift Farbe</h2>";
+  page += "<div class='buttons'>";
+  page += htmlButton("Weiss", "/text-color?c=0");
+  page += htmlButton("Gruen", "/text-color?c=1");
+  page += htmlButton("Blau", "/text-color?c=2");
+  page += htmlButton("Gelb", "/text-color?c=3");
+  page += htmlButton("Rot", "/text-color?c=4");
+  page += htmlButton("Refresh", "/");
+  page += "</div>";
+  page += "<div class='sub' style='margin-top:12px;'>Farbe der laufenden Textzeile.</div>";
   page += "</div>";
 
   page += "<div class='card'>";
@@ -557,6 +613,27 @@ void handleBrightness() {
 
     Serial.print("Brightness changed to: ");
     Serial.println(matrixBrightness);
+  }
+
+  redirectHome();
+}
+
+void handleTextColor() {
+  if (server.hasArg("c")) {
+    int value = server.arg("c").toInt();
+
+    if (value < 0) value = 0;
+    if (value > 4) value = 4;
+
+    scrollTextColorMode = (uint8_t)value;
+    saveTextColorSetting();
+
+    scrollX = PANEL_RES_X;
+    autoModeDemo = false;
+    setMode(MODE_SCROLL_TEXT, true);
+
+    Serial.print("Text color changed to: ");
+    Serial.println(getScrollTextColorName());
   }
 
   redirectHome();
@@ -633,6 +710,7 @@ void setupWebServer() {
   server.on("/auto", handleAutoDemo);
   server.on("/brightness", handleBrightness);
   server.on("/speed", handleSpeed);
+  server.on("/text-color", handleTextColor);
   server.on("/set-text", handleSetText);
   server.on("/factory-reset", handleFactoryReset);
 

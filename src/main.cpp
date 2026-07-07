@@ -8,7 +8,7 @@
 #define PANEL_RES_Y 32
 #define PANEL_CHAIN 1
 
-#define FIRMWARE_VERSION "0.6.0"
+#define FIRMWARE_VERSION "0.7.0"
 
 // WLAN Access Point
 const char *AP_SSID = "SmartFix-Matrix";
@@ -54,7 +54,7 @@ String scrollText = "ELEKTRONIKSERVICE  -  REPARATUR  -  KONSOLEN  -  SMARTFIX  
 const uint16_t MAX_SCROLL_TEXT_LEN = 160;
 int16_t scrollX = PANEL_RES_X;
 unsigned long lastScrollUpdate = 0;
-const unsigned long scrollInterval = 35;
+uint16_t scrollInterval = 35;  // kleiner = schneller
 
 // -----------------------------
 // Pixel / FX
@@ -79,10 +79,27 @@ const char *getModeName(DisplayMode mode) {
   }
 }
 
+const char *getSpeedName() {
+  if (scrollInterval >= 60) {
+    return "LANGSAM";
+  }
+
+  if (scrollInterval <= 20) {
+    return "SCHNELL";
+  }
+
+  return "MITTEL";
+}
+
 void loadSettings() {
   prefs.begin(PREF_NAMESPACE, false);
 
   matrixBrightness = prefs.getUChar("bright", 70);
+  scrollInterval = prefs.getUShort("speed", 35);
+
+  if (scrollInterval < 5 || scrollInterval > 200) {
+  scrollInterval = 35;
+}
 
   scrollText = prefs.getString("text", scrollText);
 
@@ -105,6 +122,9 @@ void loadSettings() {
   Serial.println("Settings loaded:");
   Serial.print("Brightness: ");
   Serial.println(matrixBrightness);
+  Serial.print("Scroll Speed: ");
+  Serial.print(scrollInterval);
+  Serial.println(" ms");
   Serial.print("Scroll Text: ");
   Serial.println(scrollText);
   Serial.print("Mode: ");
@@ -125,6 +145,14 @@ void saveBrightnessSetting() {
 
   Serial.print("Brightness saved: ");
   Serial.println(matrixBrightness);
+}
+
+void saveSpeedSetting() {
+  prefs.putUShort("speed", scrollInterval);
+
+  Serial.print("Scroll speed saved: ");
+  Serial.print(scrollInterval);
+  Serial.println(" ms");
 }
 
 void saveScrollTextSetting() {
@@ -416,6 +444,11 @@ String htmlPage() {
   page += "<div class='pill'><div class='label'>Brightness</div><div class='value'>";
   page += String(matrixBrightness);
   page += " / 255</div></div>";
+  page += "<div class='pill'><div class='label'>Scroll Speed</div><div class='value'>";
+  page += getSpeedName();
+  page += " / ";
+  page += String(scrollInterval);
+  page += " ms</div></div>";
   page += "</div></div>";
 
   page += "<div class='card'>";
@@ -444,6 +477,17 @@ String htmlPage() {
   page += "<a class='btn green' href='/auto'>Auto Demo starten</a>";
   page += htmlButton("Refresh", "/");
   page += "</div></div>";
+
+  page += "<div class='card'>";
+  page += "<h2>Laufschrift Geschwindigkeit</h2>";
+  page += "<div class='buttons'>";
+  page += htmlButton("Langsam", "/speed?v=70");
+  page += htmlButton("Mittel", "/speed?v=35");
+  page += htmlButton("Schnell", "/speed?v=18");
+  page += htmlButton("Turbo", "/speed?v=8");
+  page += "</div>";
+  page += "<div class='sub' style='margin-top:12px;'>Kleiner Wert = schnellere Laufschrift.</div>";
+  page += "</div>";
 
   page += "<div class='card'>";
   page += "<h2>Helligkeit</h2>";
@@ -518,6 +562,28 @@ void handleBrightness() {
   redirectHome();
 }
 
+void handleSpeed() {
+  if (server.hasArg("v")) {
+    int value = server.arg("v").toInt();
+
+    if (value < 5) value = 5;
+    if (value > 200) value = 200;
+
+    scrollInterval = (uint16_t)value;
+    saveSpeedSetting();
+
+    scrollX = PANEL_RES_X;
+    autoModeDemo = false;
+    setMode(MODE_SCROLL_TEXT, true);
+
+    Serial.print("Scroll speed changed to: ");
+    Serial.print(scrollInterval);
+    Serial.println(" ms");
+  }
+
+  redirectHome();
+}
+
 void handleSetText() {
   if (server.hasArg("t")) {
     String newText = server.arg("t");
@@ -566,6 +632,7 @@ void setupWebServer() {
   server.on("/mode", handleModeChange);
   server.on("/auto", handleAutoDemo);
   server.on("/brightness", handleBrightness);
+  server.on("/speed", handleSpeed);
   server.on("/set-text", handleSetText);
   server.on("/factory-reset", handleFactoryReset);
 

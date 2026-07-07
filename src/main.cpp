@@ -1,19 +1,22 @@
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WebServer.h>
+#include <Preferences.h>
 #include <ESP32-HUB75-MatrixPanel-I2S-DMA.h>
 
 #define PANEL_RES_X 64
 #define PANEL_RES_Y 32
 #define PANEL_CHAIN 1
 
-#define FIRMWARE_VERSION "0.4.0"
+#define FIRMWARE_VERSION "0.5.0"
 
 // WLAN Access Point
 const char *AP_SSID = "SmartFix-Matrix";
 const char *AP_PASSWORD = "smartfix123";
 
 WebServer server(80);
+Preferences prefs;
+const char *PREF_NAMESPACE = "smartfix";
 
 MatrixPanel_I2S_DMA *display = nullptr;
 
@@ -75,7 +78,43 @@ const char *getModeName(DisplayMode mode) {
   }
 }
 
-void setMode(DisplayMode newMode) {
+void loadSettings() {
+  prefs.begin(PREF_NAMESPACE, false);
+
+  matrixBrightness = prefs.getUChar("bright", 70);
+
+  int savedMode = prefs.getInt("mode", MODE_SCROLL_TEXT);
+  if (savedMode < MODE_SCROLL_TEXT || savedMode > MODE_RANDOM_FX) {
+    savedMode = MODE_SCROLL_TEXT;
+  }
+
+  currentMode = (DisplayMode)savedMode;
+  autoModeDemo = prefs.getBool("auto", true);
+
+  Serial.println("Settings loaded:");
+  Serial.print("Brightness: ");
+  Serial.println(matrixBrightness);
+  Serial.print("Mode: ");
+  Serial.println(getModeName(currentMode));
+  Serial.print("Auto Demo: ");
+  Serial.println(autoModeDemo ? "ON" : "OFF");
+}
+
+void saveModeSettings() {
+  prefs.putInt("mode", (int)currentMode);
+  prefs.putBool("auto", autoModeDemo);
+
+  Serial.println("Mode settings saved");
+}
+
+void saveBrightnessSetting() {
+  prefs.putUChar("bright", matrixBrightness);
+
+  Serial.print("Brightness saved: ");
+  Serial.println(matrixBrightness);
+}
+
+void setMode(DisplayMode newMode, bool saveSetting = true) {
   currentMode = newMode;
 
   display->clearScreen();
@@ -87,6 +126,10 @@ void setMode(DisplayMode newMode) {
 
   Serial.print("Mode changed to: ");
   Serial.println(getModeName(currentMode));
+
+  if (saveSetting) {
+    saveModeSettings();
+  }
 }
 
 // -----------------------------
@@ -218,7 +261,7 @@ void drawPixelArt() {
   display->fillRect(4, 12, 20, 4, red);
   display->fillRect(8, 16, 12, 4, red);
   display->fillRect(12, 20, 4, 4, red);
-  
+
   // Text rechts
   display->setTextWrap(false);
   display->setTextSize(1);
@@ -370,6 +413,13 @@ String htmlPage() {
   page += htmlButton("100%", "/brightness?v=200");
   page += "</div></div>";
 
+  page += "<div class='card'>";
+  page += "<h2>System</h2>";
+  page += "<div class='buttons'>";
+  page += htmlButton("Werkseinstellungen", "/factory-reset");
+  page += htmlButton("Refresh", "/");
+  page += "</div></div>";
+
   page += "<div class='small'>SmartFix Elektronikservice &bull; Designed for 64x32 HUB75 RGB Matrix</div>";
   page += "</div></body></html>";
 
@@ -391,7 +441,7 @@ void handleModeChange() {
 
     if (mode >= MODE_SCROLL_TEXT && mode <= MODE_RANDOM_FX) {
       autoModeDemo = false;
-      setMode((DisplayMode)mode);
+      setMode((DisplayMode)mode, true);
     }
   }
 
@@ -401,6 +451,9 @@ void handleModeChange() {
 void handleAutoDemo() {
   autoModeDemo = true;
   lastModeChange = millis();
+
+  saveModeSettings();
+
   Serial.println("Auto mode demo enabled from web");
   redirectHome();
 }
@@ -415,6 +468,8 @@ void handleBrightness() {
     matrixBrightness = value;
     display->setBrightness8(matrixBrightness);
 
+    saveBrightnessSetting();
+
     Serial.print("Brightness changed to: ");
     Serial.println(matrixBrightness);
   }
@@ -422,11 +477,26 @@ void handleBrightness() {
   redirectHome();
 }
 
+void handleFactoryReset() {
+  prefs.clear();
+
+  server.send(200, "text/html",
+              "<html><body style='background:#0b0f14;color:white;font-family:Arial;text-align:center;padding-top:40px;'>"
+              "<h1>SmartFix Matrix</h1>"
+              "<p>Einstellungen wurden gel&ouml;scht.</p>"
+              "<p>Neustart...</p>"
+              "</body></html>");
+
+  delay(1000);
+  ESP.restart();
+}
+
 void setupWebServer() {
   server.on("/", handleRoot);
   server.on("/mode", handleModeChange);
   server.on("/auto", handleAutoDemo);
   server.on("/brightness", handleBrightness);
+  server.on("/factory-reset", handleFactoryReset);
 
   server.onNotFound([]() {
     server.send(404, "text/plain", "404 - Not found");
@@ -477,10 +547,11 @@ void handleSerialCommands() {
     autoModeDemo = false;
     setMode(MODE_RANDOM_FX);
   } else if (cmd == 'a' || cmd == 'A') {
-    autoModeDemo = true;
-    lastModeChange = millis();
-    Serial.println("Auto mode demo enabled");
-  }
+  autoModeDemo = true;
+  lastModeChange = millis();
+  saveModeSettings();
+  Serial.println("Auto mode demo enabled");
+}
 }
 
 // -----------------------------
@@ -495,10 +566,12 @@ void setup() {
   Serial.println("SMARTFIX MATRIX");
   Serial.print("Firmware v");
   Serial.println(FIRMWARE_VERSION);
-  Serial.println("WiFi AP + Webinterface enabled");
+  Serial.println("WiFi AP + Webinterface + Preferences enabled");
   Serial.println("================================");
 
   randomSeed(esp_random());
+
+  loadSettings();
 
   initMatrix();
 
@@ -507,7 +580,7 @@ void setup() {
   setupWiFiAP();
   setupWebServer();
 
-  setMode(MODE_SCROLL_TEXT);
+  setMode(currentMode, false);
   lastModeChange = millis();
 }
 

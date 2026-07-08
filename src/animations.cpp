@@ -51,12 +51,8 @@ static int8_t scrollWaveOffset(uint16_t phase, int8_t amplitude) {
   return ((int16_t)phase * amplitude * 2 / 12) - amplitude;
 }
 
-static void printScrollChar(char c, int16_t x, int16_t y, uint16_t color) {
-  display->setTextWrap(false);
-  display->setTextSize(1);
-  display->setTextColor(color);
-  display->setCursor(x, y);
-  display->print(c);
+static void printScrollCodepoint(uint16_t codepoint, int16_t x, int16_t y, uint16_t color) {
+  drawMatrixCodepoint(codepoint, x, y, color);
 }
 
 static void drawScrollSparkles(unsigned long now) {
@@ -81,38 +77,40 @@ static void drawScrollingText() {
     display->setTextSize(1);
 
     if (scrollTextEffectMode == SCROLL_EFFECT_NORMAL) {
-      display->setTextColor(getScrollTextColor());
-      display->setCursor(scrollX, 20);
-      display->print(scrollText);
+      drawMatrixText(scrollText, scrollX, 20, getScrollTextColor());
     } else {
       int16_t cursorX = scrollX;
+      uint16_t byteIndex = 0;
+      uint16_t glyphIndex = 0;
 
-      for (uint16_t i = 0; i < scrollText.length(); i++) {
-        char c = scrollText[i];
+      while (byteIndex < scrollText.length()) {
+        uint16_t cp = nextUtf8Codepoint(scrollText, byteIndex);
+        int16_t glyphWidth = getMatrixCodepointPixelWidth(cp);
 
-        if (cursorX > -7 && cursorX < PANEL_RES_X) {
+        if (cursorX > -12 && cursorX < PANEL_RES_X) {
           int16_t y = 20;
           uint16_t color = getScrollTextColor();
 
           if (scrollTextEffectMode == SCROLL_EFFECT_RAINBOW) {
-            color = scrollPaletteColor(i + now / 120);
+            color = scrollPaletteColor(glyphIndex + now / 120);
           } else if (scrollTextEffectMode == SCROLL_EFFECT_WAVE) {
-            y += scrollWaveOffset(now / 70 + i * 3, 2);
+            y += scrollWaveOffset(now / 70 + glyphIndex * 3, 2);
           } else if (scrollTextEffectMode == SCROLL_EFFECT_SPARKLE) {
-            color = (((i + now / 90) % 9) == 0) ? white : getScrollTextColor();
+            color = (((glyphIndex + now / 90) % 9) == 0) ? white : getScrollTextColor();
           } else if (scrollTextEffectMode == SCROLL_EFFECT_COMET) {
-            printScrollChar(c, cursorX + 3, y, selectedScrollColorScaled(45));
-            printScrollChar(c, cursorX + 2, y, selectedScrollColorScaled(75));
-            printScrollChar(c, cursorX + 1, y, selectedScrollColorScaled(110));
+            printScrollCodepoint(cp, cursorX + 3, y, selectedScrollColorScaled(45));
+            printScrollCodepoint(cp, cursorX + 2, y, selectedScrollColorScaled(75));
+            printScrollCodepoint(cp, cursorX + 1, y, selectedScrollColorScaled(110));
             color = selectedScrollColorScaled(255);
           } else if (scrollTextEffectMode == SCROLL_EFFECT_FLASH) {
             color = ((now / 350) % 2 == 0) ? white : getScrollTextColor();
           }
 
-          printScrollChar(c, cursorX, y, color);
+          printScrollCodepoint(cp, cursorX, y, color);
         }
 
-        cursorX += 6;
+        cursorX += glyphWidth;
+        glyphIndex++;
       }
 
       if (scrollTextEffectMode == SCROLL_EFFECT_SPARKLE) {

@@ -66,6 +66,146 @@ uint16_t getScrollTextColor() {
   }
 }
 
+uint16_t nextUtf8Codepoint(const String &text, uint16_t &index) {
+  if (index >= text.length()) {
+    return 0;
+  }
+
+  uint8_t c = (uint8_t)text[index++];
+
+  if ((c & 0x80) == 0) {
+    return c;
+  }
+
+  if ((c & 0xE0) == 0xC0 && index < text.length()) {
+    uint8_t c2 = (uint8_t)text[index++];
+    return ((uint16_t)(c & 0x1F) << 6) | (c2 & 0x3F);
+  }
+
+  if ((c & 0xF0) == 0xE0 && (index + 1) < text.length()) {
+    uint8_t c2 = (uint8_t)text[index++];
+    uint8_t c3 = (uint8_t)text[index++];
+    return ((uint16_t)(c & 0x0F) << 12) | ((uint16_t)(c2 & 0x3F) << 6) | (c3 & 0x3F);
+  }
+
+  return '?';
+}
+
+static bool isUmlautCodepoint(uint16_t cp) {
+  return cp == 0x00E4 || cp == 0x00F6 || cp == 0x00FC ||
+         cp == 0x00C4 || cp == 0x00D6 || cp == 0x00DC;
+}
+
+static char umlautBaseChar(uint16_t cp) {
+  switch (cp) {
+    case 0x00E4: return 'a';
+    case 0x00F6: return 'o';
+    case 0x00FC: return 'u';
+    case 0x00C4: return 'A';
+    case 0x00D6: return 'O';
+    case 0x00DC: return 'U';
+    default: return '?';
+  }
+}
+
+int16_t getMatrixCodepointPixelWidth(uint16_t codepoint) {
+  if (codepoint == 0x00DF) { // ß -> ss
+    return 12;
+  }
+  return 6;
+}
+
+int16_t getMatrixTextPixelWidth(const String &text) {
+  int16_t width = 0;
+  uint16_t i = 0;
+
+  while (i < text.length()) {
+    uint16_t cp = nextUtf8Codepoint(text, i);
+    if (cp == 0) break;
+    width += getMatrixCodepointPixelWidth(cp);
+  }
+
+  return width;
+}
+
+void drawMatrixCodepoint(uint16_t codepoint, int16_t x, int16_t y, uint16_t color) {
+  display->setTextWrap(false);
+  display->setTextSize(1);
+  display->setTextColor(color);
+
+  if (isUmlautCodepoint(codepoint)) {
+    char base = umlautBaseChar(codepoint);
+    display->setCursor(x, y);
+    display->print(base);
+
+    int16_t dotY = y - 2;
+    if (dotY < 0) dotY = y;
+
+    display->drawPixel(x + 1, dotY, color);
+    display->drawPixel(x + 3, dotY, color);
+    return;
+  }
+
+  if (codepoint == 0x00DF) { // ß
+    display->setCursor(x, y);
+    display->print("ss");
+    return;
+  }
+
+  if (codepoint >= 32 && codepoint <= 126) {
+    display->setCursor(x, y);
+    display->print((char)codepoint);
+    return;
+  }
+
+  display->setCursor(x, y);
+  display->print('?');
+}
+
+void drawMatrixText(const String &text, int16_t x, int16_t y, uint16_t color) {
+  int16_t cursorX = x;
+  uint16_t i = 0;
+
+  while (i < text.length()) {
+    uint16_t cp = nextUtf8Codepoint(text, i);
+    if (cp == 0) break;
+    drawMatrixCodepoint(cp, cursorX, y, color);
+    cursorX += getMatrixCodepointPixelWidth(cp);
+  }
+}
+
+static uint8_t countUtf8Codepoints(const String &text) {
+  uint8_t count = 0;
+  uint16_t i = 0;
+
+  while (i < text.length()) {
+    uint16_t cp = nextUtf8Codepoint(text, i);
+    if (cp == 0) break;
+    count++;
+  }
+
+  return count;
+}
+
+static String utf8PrefixByCodepoints(const String &text, uint8_t maxCodepoints) {
+  String output;
+  uint16_t i = 0;
+  uint8_t count = 0;
+
+  while (i < text.length() && count < maxCodepoints) {
+    uint16_t start = i;
+    uint16_t cp = nextUtf8Codepoint(text, i);
+    if (cp == 0) break;
+
+    for (uint16_t j = start; j < i; j++) {
+      output += text[j];
+    }
+    count++;
+  }
+
+  return output;
+}
+
 static bool logoIsSmartFix() {
   return logoText.equalsIgnoreCase("SmartFix");
 }
@@ -169,11 +309,7 @@ static uint16_t logoHighlightColor(uint8_t partIndex, uint8_t scale = 255) {
 }
 
 static void printText(const String &text, int16_t x, int16_t y, uint16_t color) {
-  display->setTextWrap(false);
-  display->setTextSize(1);
-  display->setTextColor(color);
-  display->setCursor(x, y);
-  display->print(text);
+  drawMatrixText(text, x, y, color);
 }
 
 // Draw a readable wordmark with the same base font as the scrolling text,
@@ -244,8 +380,8 @@ void drawSmartFixWordmark(int16_t x, int16_t y, uint8_t revealChars, uint8_t bri
 
 static void drawGenericLogoText(const String &text, int16_t x, int16_t y, uint8_t revealChars, uint8_t brightnessScale, int8_t shimmerIndex = -1) {
   String visible = text;
-  if (revealChars < visible.length()) {
-    visible = visible.substring(0, revealChars);
+  if (revealChars < countUtf8Codepoints(visible)) {
+    visible = utf8PrefixByCodepoints(visible, revealChars);
   }
 
   int16_t cursorX = x;
@@ -264,7 +400,7 @@ static void drawGenericLogoText(const String &text, int16_t x, int16_t y, uint8_
     if (word.length() > 0) {
       printText(word, cursorX + 1, y + 1, logoShadowColor(wordIndex, brightnessScale));
       printText(word, cursorX, y, logoMainColor(wordIndex, brightnessScale));
-      cursorX += word.length() * 6;
+      cursorX += getMatrixTextPixelWidth(word);
       wordIndex++;
       word = "";
     }
@@ -272,7 +408,7 @@ static void drawGenericLogoText(const String &text, int16_t x, int16_t y, uint8_
     if (i < visible.length()) {
       String sep = String(c);
       printText(sep, cursorX, y, logoMainColor(wordIndex, brightnessScale));
-      cursorX += 6;
+      cursorX += getMatrixTextPixelWidth(sep);
     }
   }
 
@@ -318,36 +454,41 @@ static void drawLogoWaveText(const String &text, int16_t x, int16_t y, bool isBr
   int16_t cursorX = x;
   uint8_t wordIndex = 0;
   uint16_t t = millis() / 70;
+  uint16_t byteIndex = 0;
+  uint8_t glyphIndex = 0;
   int8_t globalBounce = bounceOnly ? triangleWaveOffset(millis() / 85, 2) : 0;
 
-  for (uint16_t i = 0; i < text.length(); i++) {
-    char c = text[i];
+  while (byteIndex < text.length()) {
+    uint16_t cp = nextUtf8Codepoint(text, byteIndex);
 
-    if (c == ' ') {
+    if (cp == ' ') {
       cursorX += 6;
       wordIndex++;
+      glyphIndex++;
       continue;
     }
 
-    uint8_t partIndex = isBrand ? (i < 5 ? 0 : 1) : wordIndex;
+    uint8_t partIndex = isBrand ? (glyphIndex < 5 ? 0 : 1) : wordIndex;
     int8_t yOffset = globalBounce;
 
     if (!bounceOnly) {
-      yOffset = triangleWaveOffset(t + i * 3, 2);
+      yOffset = triangleWaveOffset(t + glyphIndex * 3, 2);
     }
 
-    String ch = String(c);
-    printText(ch, cursorX + 1, y + 1 + yOffset, logoShadowColor(partIndex, brightnessScale));
-    printText(ch, cursorX, y + yOffset, logoMainColor(partIndex, brightnessScale));
+    drawMatrixCodepoint(cp, cursorX + 1, y + 1 + yOffset, logoShadowColor(partIndex, brightnessScale));
+    drawMatrixCodepoint(cp, cursorX, y + yOffset, logoMainColor(partIndex, brightnessScale));
 
-    cursorX += 6;
-    if (isBrand && i == 4) {
+    cursorX += getMatrixCodepointPixelWidth(cp);
+
+    if (isBrand && glyphIndex == 4) {
       cursorX += 2;
     }
 
-    if (!isBrand && (c == '-' || c == '_')) {
+    if (!isBrand && (cp == '-' || cp == '_')) {
       wordIndex++;
     }
+
+    glyphIndex++;
   }
 }
 
@@ -374,7 +515,7 @@ static void drawLogoGlitchOverlay(const String &text, int16_t x, int16_t y, bool
   display->drawFastHLine(0, lineY, PANEL_RES_X, glitchBlue);
 }
 
-static void drawLogoScanline(int16_t x, int16_t y, uint8_t textWidth) {
+static void drawLogoScanline(int16_t x, int16_t y, int16_t textWidth) {
   uint16_t phase = (millis() / 35) % (textWidth + 18);
   int16_t scanX = x - 8 + phase;
 
@@ -397,11 +538,11 @@ void drawHeader() {
   }
 
   const bool isBrand = text.equalsIgnoreCase("SmartFix");
-  const uint8_t totalChars = isBrand ? 8 : text.length();
+  const uint8_t totalChars = isBrand ? 8 : countUtf8Codepoints(text);
 
   uint8_t revealChars = totalChars;
   uint8_t fadeScale = 255;
-  int16_t baseX = isBrand ? 7 : (PANEL_RES_X - getTextPixelWidth(text)) / 2;
+  int16_t baseX = isBrand ? 7 : (PANEL_RES_X - getMatrixTextPixelWidth(text)) / 2;
   int16_t baseY = 3;
   int8_t shimmerIndex = -1;
 
@@ -452,7 +593,7 @@ void drawHeader() {
   } else if (logoEffectMode == LOGO_EFFECT_GLITCH) {
     drawLogoGlitchOverlay(isBrand ? String("SmartFix") : text, baseX, baseY, isBrand);
   } else if (logoEffectMode == LOGO_EFFECT_SCANLINE) {
-    drawLogoScanline(baseX, baseY, isBrand ? 50 : getTextPixelWidth(text));
+    drawLogoScanline(baseX, baseY, isBrand ? 50 : getMatrixTextPixelWidth(text));
   }
 
   // Blue separator line intentionally removed.

@@ -10,6 +10,12 @@ void loadSettings() {
 
   matrixBrightness = prefs.getUChar("bright", DEFAULT_BRIGHTNESS);
 
+  uiLanguage = prefs.getString("uiLang", "de");
+  uiLanguage.toLowerCase();
+  if (uiLanguage != "de" && uiLanguage != "en") {
+    uiLanguage = "de";
+  }
+
   scrollTextColorMode = prefs.getUChar("txtColor", 0);
   if (scrollTextColorMode > 4) {
     scrollTextColorMode = 0;
@@ -72,6 +78,8 @@ void loadSettings() {
   Serial.println("Settings loaded:");
   Serial.print("Brightness: ");
   Serial.println(matrixBrightness);
+  Serial.print("UI Language: ");
+  Serial.println(uiLanguage);
   Serial.print("Text Color: ");
   Serial.println(getScrollTextColorName());
   Serial.print("Scroll Effect: ");
@@ -99,6 +107,12 @@ void saveModeSettings() {
   prefs.putInt("mode", (int)currentMode);
   prefs.putBool("auto", autoModeDemo);
   Serial.println("Mode settings saved");
+}
+
+void saveLanguageSetting() {
+  prefs.putString("uiLang", uiLanguage);
+  Serial.print("UI language saved: ");
+  Serial.println(uiLanguage);
 }
 
 void saveBrightnessSetting() {

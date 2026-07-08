@@ -62,6 +62,10 @@ extern uint8_t scrollTextEffectMode;
 extern uint8_t logoEffectMode;
 extern uint8_t logoColorMode;
 
+// Web UI language
+extern String uiLanguage;
+bool isGermanUi();
+
 // Home WiFi / OTA
 extern bool homeWifiEnabled;
 extern String homeWifiSsid;

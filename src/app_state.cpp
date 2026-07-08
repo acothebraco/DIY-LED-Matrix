@@ -23,11 +23,17 @@ bool homeWifiEnabled = false;
 String homeWifiSsid = "";
 String homeWifiPassword = "";
 String otaUrl = DEFAULT_OTA_URL;
+String uiLanguage = "de";
 String lastOtaStatus = "Noch kein OTA Update gestartet.";
 
 int16_t getTextPixelWidth(const String &text) {
-  return text.length() * 6;
+  return getMatrixTextPixelWidth(text);
 }
+
+bool isGermanUi() {
+  return !uiLanguage.equalsIgnoreCase("en");
+}
+
 
 const char *getModeName(DisplayMode mode) {
   switch (mode) {

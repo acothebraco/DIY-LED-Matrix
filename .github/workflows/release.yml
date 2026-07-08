@@ -41,8 +41,20 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
-          gh release create "$TAG" dist/* \
-            --title "SmartFix Matrix $TAG" \
-            --generate-notes \
-            --latest \
-            --verify-tag
+          NOTES_FILE="release-notes/${TAG}.md"
+
+          if [ -f "$NOTES_FILE" ]; then
+            echo "Using release notes: $NOTES_FILE"
+            gh release create "$TAG" dist/* \
+              --title "SmartFix Matrix $TAG" \
+              --notes-file "$NOTES_FILE" \
+              --latest \
+              --verify-tag
+          else
+            echo "No release notes file found for $TAG. Falling back to generated notes."
+            gh release create "$TAG" dist/* \
+              --title "SmartFix Matrix $TAG" \
+              --generate-notes \
+              --latest \
+              --verify-tag
+          fi

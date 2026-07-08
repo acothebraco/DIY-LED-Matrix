@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 // SmartFix Matrix firmware
-#define FIRMWARE_VERSION "1.4.0"
+#define FIRMWARE_VERSION "1.4.1"
 
 // Current hardware: one 64x32 HUB75 panel.
 // Later:
@@ -28,9 +28,16 @@ static const char PREF_NAMESPACE[] = "smartfix";
 static const uint8_t DEFAULT_BRIGHTNESS = 70;
 static const uint16_t DEFAULT_SCROLL_INTERVAL = 35;
 static const uint16_t MAX_SCROLL_TEXT_LEN = 160;
-static const uint16_t MAX_LOGO_TEXT_LEN = 32;
+static const uint16_t MAX_LOGO_TEXT_LEN = 160;
 
 // OTA default URL.
-// Replace in Web UI with your real GitHub release asset URL if needed.
+// This must point to the app-only OTA binary, not the full USB flash binary.
 static const char DEFAULT_OTA_URL[] =
-  "https://github.com/acothebraco/SmartFix-Matrix/releases/latest/download/firmware.bin";
+  "https://github.com/acothebraco/SmartFix-Matrix/releases/latest/download/SmartFix-Matrix-ota.bin";
+
+// GitHub API endpoint used for update checks.
+static const char GITHUB_RELEASE_API_URL[] =
+  "https://api.github.com/repos/acothebraco/SmartFix-Matrix/releases/latest";
+
+// Automatic firmware update check interval.
+static const unsigned long OTA_AUTO_CHECK_INTERVAL_MS = 6UL * 60UL * 60UL * 1000UL;

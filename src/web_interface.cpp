@@ -2,6 +2,7 @@
 
 #include <WebServer.h>
 #include <WiFi.h>
+#include <Update.h>
 #include "config.h"
 #include "app_state.h"
 #include "settings.h"
@@ -18,6 +19,16 @@ static String htmlEscape(const String &input) {
   output.replace("'", "&#39;");
   output.replace("<", "&lt;");
   output.replace(">", "&gt;");
+  return output;
+}
+
+static String jsEscape(const String &input) {
+  String output = input;
+  output.replace("\\", "\\\\");
+  output.replace("\"", "\\\"");
+  output.replace("\r", "");
+  output.replace("\n", "\\n");
+  output.replace("</", "<\\/");
   return output;
 }
 
@@ -131,12 +142,68 @@ static String htmlPage() {
 <style>
 :root{--bg:#050812;--panel:#0d1320;--panel2:#111827;--line:#223149;--text:#e5e7eb;--muted:#94a3b8;--green:#22c55e;--green2:#16a34a;--blue:#38bdf8;--blue2:#2563eb;--danger:#ef4444;}
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:radial-gradient(circle at 18% 0%,rgba(34,197,94,.20),transparent 34%),radial-gradient(circle at 88% 10%,rgba(56,189,248,.16),transparent 32%),linear-gradient(180deg,#050812 0%,#08111f 55%,#050812 100%);color:var(--text);min-height:100vh;}
-a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:relative;overflow:hidden;border:1px solid rgba(148,163,184,.22);border-radius:26px;background:linear-gradient(145deg,rgba(17,24,39,.93),rgba(2,6,23,.92));box-shadow:0 22px 70px rgba(0,0,0,.45);padding:22px;margin-bottom:16px}.hero:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(34,197,94,.10),transparent 40%,rgba(56,189,248,.10));pointer-events:none}.topbar{position:relative;display:flex;align-items:center;gap:15px;margin-bottom:18px;padding-right:120px}.logo-badge{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-weight:900;font-size:20px;color:white;background:linear-gradient(135deg,var(--green),var(--blue));box-shadow:0 0 32px rgba(34,197,94,.28)}.title-block h1{margin:0;font-size:31px;letter-spacing:-.8px}.title-block .sub{margin:5px 0 0;color:var(--muted)}.version-chip{margin-left:auto;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.36);color:#bbf7d0;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:bold;white-space:nowrap}.lang-switch{position:absolute;top:18px;right:18px;display:flex;gap:6px;background:rgba(2,6,23,.54);border:1px solid rgba(148,163,184,.18);border-radius:999px;padding:5px;z-index:2}.lang-btn{display:block;text-decoration:none;color:var(--muted);font-weight:900;font-size:12px;border-radius:999px;padding:7px 10px}.lang-btn.active{background:linear-gradient(135deg,var(--green2),var(--blue));color:white;box-shadow:0 0 18px rgba(56,189,248,.18)}.status{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pill{background:rgba(2,6,23,.72);border:1px solid rgba(148,163,184,.18);border-radius:16px;padding:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}.pill.good{border-color:rgba(34,197,94,.32)}.pill.blue{border-color:rgba(56,189,248,.28)}.label{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}.value{font-size:16px;font-weight:bold;color:#f8fafc;margin-top:5px;word-break:break-word}.card{background:linear-gradient(145deg,rgba(17,24,39,.92),rgba(12,18,30,.92));border:1px solid rgba(148,163,184,.18);border-radius:22px;margin-bottom:12px;box-shadow:0 12px 36px rgba(0,0,0,.28)}details.card{overflow:hidden}summary{cursor:pointer;list-style:none;padding:18px 20px;display:flex;align-items:center;gap:12px;user-select:none}summary::-webkit-details-marker{display:none}.section-icon{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);color:#7dd3fc;font-size:18px}.summary-text{font-size:18px;font-weight:800;color:#f8fafc}.sumvalue{margin-left:auto;color:var(--muted);font-size:13px;font-weight:bold;text-align:right}.chev{margin-left:8px;color:var(--green);font-size:22px;line-height:1;transition:.18s transform}details[open] .chev{transform:rotate(45deg)}.detail-body{padding:0 20px 20px;border-top:1px solid rgba(148,163,184,.11)}h2{margin:18px 0 12px;font-size:15px;color:#7dd3fc;text-transform:uppercase;letter-spacing:.5px}.sub{color:var(--muted);font-size:14px;line-height:1.45}.hint{margin-top:12px;padding:12px;border:1px solid rgba(34,197,94,.24);background:rgba(34,197,94,.08);border-radius:14px;color:#bbf7d0}.buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.btn{display:flex;align-items:center;justify-content:center;min-height:46px;text-align:center;text-decoration:none;border:1px solid rgba(148,163,184,.18);background:linear-gradient(135deg,rgba(37,99,235,.95),rgba(14,165,233,.82));color:white;padding:12px;border-radius:14px;font-weight:800;box-shadow:0 10px 22px rgba(37,99,235,.17);transition:.16s transform,.16s filter,.16s border-color}.btn:hover{filter:brightness(1.12);transform:translateY(-1px);border-color:rgba(125,211,252,.45)}.btn.green{background:linear-gradient(135deg,var(--green2),var(--green));box-shadow:0 10px 22px rgba(34,197,94,.17)}.btn.danger{background:linear-gradient(135deg,#b91c1c,var(--danger))}button.btn{border:0;width:100%;cursor:pointer;font-size:15px}input{width:100%;background:rgba(2,6,23,.78);color:var(--text);border:1px solid rgba(148,163,184,.22);border-radius:15px;padding:14px 15px;font-size:16px;margin-bottom:12px;outline:none}input:focus{border-color:rgba(56,189,248,.65);box-shadow:0 0 0 3px rgba(56,189,248,.12)}.small{font-size:13px;color:var(--muted);margin:18px 0 4px;text-align:center}.row-title{display:flex;align-items:center;justify-content:space-between;margin:18px 0 10px}.mini-chip{font-size:12px;color:#bbf7d0;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.25);border-radius:999px;padding:5px 9px}@media(max-width:760px){.wrap{padding:14px}.hero{padding:18px;border-radius:22px}.topbar{align-items:flex-start;padding-top:34px;padding-right:0}.version-chip{display:none}.status{grid-template-columns:1fr 1fr}.buttons{grid-template-columns:1fr}.sumvalue{display:none}.title-block h1{font-size:27px}}@media(max-width:460px){.status{grid-template-columns:1fr}.logo-badge{width:46px;height:46px}.summary-text{font-size:16px}}
+a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:relative;overflow:hidden;border:1px solid rgba(148,163,184,.22);border-radius:26px;background:linear-gradient(145deg,rgba(17,24,39,.93),rgba(2,6,23,.92));box-shadow:0 22px 70px rgba(0,0,0,.45);padding:22px;margin-bottom:16px}.hero:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(34,197,94,.10),transparent 40%,rgba(56,189,248,.10));pointer-events:none}.topbar{position:relative;display:flex;align-items:center;gap:15px;margin-bottom:18px;padding-right:120px}.logo-badge{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-weight:900;font-size:20px;color:white;background:linear-gradient(135deg,var(--green),var(--blue));box-shadow:0 0 32px rgba(34,197,94,.28)}.title-block h1{margin:0;font-size:31px;letter-spacing:-.8px}.title-block .sub{margin:5px 0 0;color:var(--muted)}.version-chip{margin-left:auto;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.36);color:#bbf7d0;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:bold;white-space:nowrap}.lang-switch{position:absolute;top:18px;right:18px;display:flex;gap:6px;background:rgba(2,6,23,.54);border:1px solid rgba(148,163,184,.18);border-radius:999px;padding:5px;z-index:2}.lang-btn{display:block;text-decoration:none;color:var(--muted);font-weight:900;font-size:12px;border-radius:999px;padding:7px 10px}.lang-btn.active{background:linear-gradient(135deg,var(--green2),var(--blue));color:white;box-shadow:0 0 18px rgba(56,189,248,.18)}.status{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pill{background:rgba(2,6,23,.72);border:1px solid rgba(148,163,184,.18);border-radius:16px;padding:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}.pill.good{border-color:rgba(34,197,94,.32)}.pill.blue{border-color:rgba(56,189,248,.28)}.label{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}.value{font-size:16px;font-weight:bold;color:#f8fafc;margin-top:5px;word-break:break-word}.card{background:linear-gradient(145deg,rgba(17,24,39,.92),rgba(12,18,30,.92));border:1px solid rgba(148,163,184,.18);border-radius:22px;margin-bottom:12px;box-shadow:0 12px 36px rgba(0,0,0,.28)}details.card{overflow:hidden}summary{cursor:pointer;list-style:none;padding:18px 20px;display:flex;align-items:center;gap:12px;user-select:none}summary::-webkit-details-marker{display:none}.section-icon{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);color:#7dd3fc;font-size:18px}.summary-text{font-size:18px;font-weight:800;color:#f8fafc}.sumvalue{margin-left:auto;color:var(--muted);font-size:13px;font-weight:bold;text-align:right}.chev{margin-left:8px;color:var(--green);font-size:22px;line-height:1;transition:.18s transform}details[open] .chev{transform:rotate(45deg)}.detail-body{padding:0 20px 20px;border-top:1px solid rgba(148,163,184,.11)}h2{margin:18px 0 12px;font-size:15px;color:#7dd3fc;text-transform:uppercase;letter-spacing:.5px}.sub{color:var(--muted);font-size:14px;line-height:1.45}.hint{margin-top:12px;padding:12px;border:1px solid rgba(34,197,94,.24);background:rgba(34,197,94,.08);border-radius:14px;color:#bbf7d0}.buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.btn{display:flex;align-items:center;justify-content:center;min-height:46px;text-align:center;text-decoration:none;border:1px solid rgba(148,163,184,.18);background:linear-gradient(135deg,rgba(37,99,235,.95),rgba(14,165,233,.82));color:white;padding:12px;border-radius:14px;font-weight:800;box-shadow:0 10px 22px rgba(37,99,235,.17);transition:.16s transform,.16s filter,.16s border-color}.btn:hover{filter:brightness(1.12);transform:translateY(-1px);border-color:rgba(125,211,252,.45)}.btn.green{background:linear-gradient(135deg,var(--green2),var(--green));box-shadow:0 10px 22px rgba(34,197,94,.17)}.btn.danger{background:linear-gradient(135deg,#b91c1c,var(--danger))}button.btn{border:0;width:100%;cursor:pointer;font-size:15px}input{width:100%;background:rgba(2,6,23,.78);color:var(--text);border:1px solid rgba(148,163,184,.22);border-radius:15px;padding:14px 15px;font-size:16px;margin-bottom:12px;outline:none}input[type=file]{cursor:pointer}input:focus{border-color:rgba(56,189,248,.65);box-shadow:0 0 0 3px rgba(56,189,248,.12)}.small{font-size:13px;color:var(--muted);margin:18px 0 4px;text-align:center}.row-title{display:flex;align-items:center;justify-content:space-between;margin:18px 0 10px}.mini-chip{font-size:12px;color:#bbf7d0;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.25);border-radius:999px;padding:5px 9px}.preview-shell{display:flex;justify-content:center;align-items:center;background:#020617;border:1px solid rgba(56,189,248,.25);border-radius:18px;padding:14px;box-shadow:inset 0 0 28px rgba(56,189,248,.08)}#matrixPreview{width:100%;max-width:512px;height:auto;image-rendering:pixelated;border-radius:10px;background:#000;box-shadow:0 0 28px rgba(34,197,94,.16)}.preview-row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:12px}.preview-dot{width:10px;height:10px;border-radius:50%;display:inline-block;background:var(--green);box-shadow:0 0 12px var(--green);margin-right:7px}@media(max-width:760px){.wrap{padding:14px}.hero{padding:18px;border-radius:22px}.topbar{align-items:flex-start;padding-top:34px;padding-right:0}.version-chip{display:none}.status{grid-template-columns:1fr 1fr}.buttons{grid-template-columns:1fr}.sumvalue{display:none}.title-block h1{font-size:27px}}@media(max-width:460px){.status{grid-template-columns:1fr}.logo-badge{width:46px;height:46px}.summary-text{font-size:16px}}
 </style>
 <script>
 (function(){var key='sf_open_sections_v2';function ids(){var a=[];document.querySelectorAll('details.config-section').forEach(function(d){if(d.open&&d.id)a.push(d.id);});return a;}function save(){try{localStorage.setItem(key,JSON.stringify(ids()));sessionStorage.setItem('sf_scroll',String(window.scrollY||0));}catch(e){}}function openByHash(){var h=location.hash?location.hash.substring(1):'';if(!h)return false;var el=document.getElementById(h);if(el&&el.tagName&&el.tagName.toLowerCase()==='details'){el.open=true;setTimeout(function(){el.scrollIntoView({block:'start'});},80);return true;}return false;}window.addEventListener('load',function(){var restored=false;try{var raw=localStorage.getItem(key);if(raw){var arr=JSON.parse(raw);document.querySelectorAll('details.config-section').forEach(function(d){d.open=arr.indexOf(d.id)>=0;});restored=true;}}catch(e){}if(!restored){var d=document.getElementById('section-mode');if(d)d.open=true;}var hashOpened=openByHash();document.querySelectorAll('details.config-section').forEach(function(d){d.addEventListener('toggle',save);});document.querySelectorAll('a.btn,button.btn,form,.lang-btn').forEach(function(el){el.addEventListener(el.tagName.toLowerCase()==='form'?'submit':'click',save);});if(!hashOpened){var y=sessionStorage.getItem('sf_scroll');if(y!==null){setTimeout(function(){window.scrollTo(0,parseInt(y)||0);sessionStorage.removeItem('sf_scroll');},40);}}});window.addEventListener('beforeunload',save);})();
+
+(function(){
+  var p=window.sfPreview||{};
+  var colors=['#f8fafc','#22c55e','#38bdf8','#facc15','#ef4444'];
+  var wordColors=['#22c55e','#38bdf8','#facc15','#ef4444','#f8fafc'];
+  function glyphs(t){return Array.from(t||'');}
+  function tw(t){return glyphs(t).length*6;}
+  function col(i){return colors[i]||colors[0];}
+  function partColor(i){
+    if(p.logoColor==1)return colors[1]; if(p.logoColor==2)return colors[2]; if(p.logoColor==3)return colors[0];
+    if(p.logoColor==4)return colors[3]; if(p.logoColor==5)return colors[4];
+    if(p.logoColor==7)return wordColors[i%wordColors.length]; return i%2?colors[2]:colors[1];
+  }
+  function txt(c,t,x,y,color){c.fillStyle=color;c.font='7px monospace';c.textBaseline='top';c.fillText(t,x,y);}
+  function drawLogo(c,t,now){
+    t=t||'SmartFix'; var brand=t.toLowerCase()==='smartfix'; var w=tw(t), x=Math.max(0,(64-w)/2), y=3;
+    if(p.logoEffect==11){
+      var a=(now/1400)%1, mid=Math.ceil(glyphs(t).length/2), left=glyphs(t).slice(0,mid).join(''), right=glyphs(t).slice(mid).join('');
+      var lw=tw(left), rw=tw(right), lx=-lw+(x+lw)*a, rx=64-(64-(x+lw))*a;
+      txt(c,left,lx,y,partColor(0)); txt(c,right,rx,y,partColor(1)); return;
+    }
+    if(brand && p.logoColor==0){txt(c,'Smart',7,y,colors[1]);txt(c,'Fix',39,y,colors[2]);return;}
+    var words=t.split(' '), cx=x;
+    for(var i=0;i<words.length;i++){txt(c,words[i],cx,y,partColor(i));cx+=tw(words[i]+' ');}  
+  }
+  function drawScroll(c,t,now){
+    t=t||'SmartFix Matrix'; var y=20, w=tw(t), speed=Math.max(8,parseInt(p.speed||35));
+    if(p.scrollEffect==6){
+      var a=(now/(speed*90))%1, mid=Math.ceil(glyphs(t).length/2), left=glyphs(t).slice(0,mid).join(''), right=glyphs(t).slice(mid).join('');
+      var lw=tw(left), rw=tw(right), lx=-lw+(2+lw)*a, rx=64-(64-(62-rw))*a;
+      txt(c,left,lx,y,col(p.scrollColor)); txt(c,right,rx,y,col(p.scrollColor)); return;
+    }
+    var x=64-((now/(speed*2))%(w+72));
+    if(p.scrollEffect==1){var gs=glyphs(t), cx=x; for(var i=0;i<gs.length;i++){txt(c,gs[i],cx,y,wordColors[(i+Math.floor(now/180))%wordColors.length]);cx+=6;}return;}
+    txt(c,t,x,y,col(p.scrollColor));
+  }
+  function frame(ts){
+    var cv=document.getElementById('matrixPreview'); if(!cv){requestAnimationFrame(frame);return;}
+    var si=document.getElementById('scrollTextInput'), li=document.getElementById('logoTextInput');
+    if(si)p.scrollText=si.value; if(li)p.logoText=li.value;
+    var c=cv.getContext('2d'); c.imageSmoothingEnabled=false; c.setTransform(1,0,0,1,0,0); c.fillStyle='#000'; c.fillRect(0,0,256,128); c.setTransform(4,0,0,4,0,0);
+    c.fillStyle='#020617'; c.fillRect(0,0,64,32); c.strokeStyle='rgba(34,197,94,.55)'; c.strokeRect(.5,.5,63,31);
+    drawLogo(c,p.logoText,ts); drawScroll(c,p.scrollText,ts);
+    requestAnimationFrame(frame);
+  }
+  window.addEventListener('load',function(){requestAnimationFrame(frame);});
+})();
 </script>
 )rawliteral";
+  page += "<script>window.sfPreview={";
+  page += "scrollText:"" + jsEscape(scrollText) + "",";
+  page += "logoText:"" + jsEscape(logoText) + "",";
+  page += "scrollColor:" + String(scrollTextColorMode) + ",";
+  page += "scrollEffect:" + String(scrollTextEffectMode) + ",";
+  page += "logoEffect:" + String(logoEffectMode) + ",";
+  page += "logoColor:" + String(logoColorMode) + ",";
+  page += "speed:" + String(scrollInterval);
+  page += "};</script>";
   page += "</head><body><div class='wrap'>";
 
   page += "<div class='hero'>";
@@ -158,7 +225,20 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += "<div class='pill'><div class='label'>" + L("Textfarbe", "Text color") + "</div><div class='value'>" + String(getScrollTextColorName()) + "</div></div>";
   page += "<div class='pill'><div class='label'>" + L("Heim WLAN", "Home WiFi") + "</div><div class='value'>" + getWiFiStatusText() + "<br>" + htmlEscape(getStaIpText()) + "</div></div>";
   page += "<div class='pill'><div class='label'>" + L("mDNS Adresse", "mDNS address") + "</div><div class='value'>" + htmlEscape(getMdnsAddressText()) + "</div></div>";
+  page += "<div class='pill'><div class='label'>" + L("Firmware Check", "Firmware check") + "</div><div class='value'>";
+  if (latestFirmwareVersion == "-") {
+    page += L("Nicht geprüft", "Not checked");
+  } else {
+    page += firmwareUpdateAvailable ? L("Update verfügbar", "Update available") : L("Aktuell", "Up to date");
+  }
+  page += "<br>" + htmlEscape(latestFirmwareVersion) + "</div></div>";
   page += "</div></div>";
+
+  page += "<details class='card config-section' id='section-preview' open>";
+  page += "<summary><span class='section-icon'>&#128161;</span><span class='summary-text'>" + L("LED Matrix Vorschau", "LED matrix preview") + "</span><span class='sumvalue'>64x32</span><span class='chev'>+</span></summary><div class='detail-body'>";
+  page += "<div class='preview-shell'><canvas id='matrixPreview' width='256' height='128'></canvas></div>";
+  page += "<div class='preview-row'><div class='sub'><span class='preview-dot'></span>" + L("Animierte Vorschau aus aktuellem Logo- und Lauftext. Eingaben werden live angezeigt, bevor du speicherst.", "Animated preview from current logo and scrolling text. Inputs are shown live before saving.") + "</div></div>";
+  page += "</div></details>";
 
   page += "<details class='card config-section' id='section-mode'>";
   page += "<summary><span class='section-icon'>&#9881;</span><span class='summary-text'>" + L("Modus ausw&auml;hlen", "Select mode") + "</span><span class='sumvalue'>" + String(getModeName(currentMode)) + "</span><span class='chev'>+</span></summary><div class='detail-body'>";
@@ -173,7 +253,7 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += "<summary><span class='section-icon'>&#9998;</span><span class='summary-text'>" + L("Laufschrift", "Scrolling text") + "</span><span class='sumvalue'>" + String(getScrollTextEffectName()) + "</span><span class='chev'>+</span></summary><div class='detail-body'>";
   page += "<div class='row-title'><h2>" + L("Text", "Text") + "</h2><span class='mini-chip'>" + L("max. 160 Zeichen", "max. 160 characters") + "</span></div>";
   page += "<form action='/set-text' method='GET'>";
-  page += "<input name='t' maxlength='160' value='" + htmlEscape(scrollText) + "'>";
+  page += "<input id='scrollTextInput' name='t' maxlength='160' value='" + htmlEscape(scrollText) + "'>";
   page += "<button class='btn green' type='submit'>" + L("Text speichern", "Save text") + "</button>";
   page += "</form>";
   page += "<h2>" + L("Geschwindigkeit", "Speed") + "</h2><div class='buttons'>";
@@ -183,8 +263,8 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += htmlButton("Turbo", "/speed?v=8");
   page += "</div>";
   page += "<h2>" + L("Farbe", "Color") + "</h2><div class='buttons'>";
-  page += htmlButton(L("Weiss", "White"), "/text-color?c=0");
-  page += htmlButton(L("Gruen", "Green"), "/text-color?c=1");
+  page += htmlButton(L("Weiß", "White"), "/text-color?c=0");
+  page += htmlButton(L("Grün", "Green"), "/text-color?c=1");
   page += htmlButton(L("Blau", "Blue"), "/text-color?c=2");
   page += htmlButton(L("Gelb", "Yellow"), "/text-color?c=3");
   page += htmlButton(L("Rot", "Red"), "/text-color?c=4");
@@ -197,13 +277,14 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += htmlButton("Sparkle", "/scroll-effect?e=3");
   page += htmlButton("Comet Trail", "/scroll-effect?e=4");
   page += htmlButton("Flash", "/scroll-effect?e=5");
+  page += htmlButton(L("Beidseitiges Sliden", "Two-way slide"), "/scroll-effect?e=6");
   page += "</div><div class='hint'>" + L("Effekte betreffen nur die laufende Textzeile unten.", "Effects apply only to the lower scrolling text line.") + "</div></div></details>";
 
   page += "<details class='card config-section' id='section-logo'>";
   page += "<summary><span class='section-icon'>SF</span><span class='summary-text'>Logo / Header</span><span class='sumvalue'>" + String(getLogoEffectName()) + "</span><span class='chev'>+</span></summary><div class='detail-body'>";
-  page += "<div class='row-title'><h2>" + L("Logo Text", "Logo text") + "</h2><span class='mini-chip'>" + L("max. 32 Zeichen", "max. 32 characters") + "</span></div>";
+  page += "<div class='row-title'><h2>" + L("Logo Text", "Logo text") + "</h2><span class='mini-chip'>" + L("max. 160 Zeichen", "max. 160 characters") + "</span></div>";
   page += "<form action='/set-logo-text' method='GET'>";
-  page += "<input name='t' maxlength='32' value='" + htmlEscape(logoText) + "'>";
+  page += "<input id='logoTextInput' name='t' maxlength='160' value='" + htmlEscape(logoText) + "'>";
   page += "<button class='btn green' type='submit'>" + L("Logo Text speichern", "Save logo text") + "</button>";
   page += "</form>";
   page += "<div class='hint'>" + L("Der Logo-Text kann einfarbig, zweifarbig oder wortweise mehrfarbig dargestellt werden.", "The logo text can be displayed in one color, two colors, or word-by-word multicolor.") + "</div>";
@@ -219,12 +300,19 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += htmlButton("Bounce", "/logo-effect?e=8");
   page += htmlButton("Glitch", "/logo-effect?e=9");
   page += htmlButton("Scanline", "/logo-effect?e=10");
+  page += htmlButton(L("Beidseitiges Sliden", "Two-way slide"), "/logo-effect?e=11");
   page += htmlButton("Refresh", "/");
-  page += "</div><h2>" + L("Logo Farbe", "Logo color") + "</h2><div class='buttons'>";
+  page += "</div><h2>" + L("Logo Geschwindigkeit", "Logo speed") + "</h2><div class='buttons'>";
+  page += htmlButton(L("Langsam", "Slow"), "/speed?v=70&target=logo");
+  page += htmlButton(L("Mittel", "Medium"), "/speed?v=35&target=logo");
+  page += htmlButton(L("Schnell", "Fast"), "/speed?v=18&target=logo");
+  page += htmlButton("Turbo", "/speed?v=8&target=logo");
+  page += "</div><div class='hint'>" + L("Logo und Laufschrift verwenden dieselbe Geschwindigkeitseinstellung.", "Logo and scrolling text use the same speed setting.") + "</div>";
+  page += "<h2>" + L("Logo Farbe", "Logo color") + "</h2><div class='buttons'>";
   page += htmlButton("Auto / Brand", "/logo-color?c=0");
-  page += htmlButton(L("Gruen", "Green"), "/logo-color?c=1");
+  page += htmlButton(L("Grün", "Green"), "/logo-color?c=1");
   page += htmlButton(L("Blau", "Blue"), "/logo-color?c=2");
-  page += htmlButton(L("Weiss", "White"), "/logo-color?c=3");
+  page += htmlButton(L("Weiß", "White"), "/logo-color?c=3");
   page += htmlButton(L("Gelb", "Yellow"), "/logo-color?c=4");
   page += htmlButton(L("Rot", "Red"), "/logo-color?c=5");
   page += htmlButton(L("2-farbig nach Wort", "Two-color by word"), "/logo-color?c=6");
@@ -257,11 +345,15 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += "<div class='sub' style='margin-top:12px;'>" + L("Der SmartFix-Matrix Access Point bleibt zus&auml;tzlich aktiv.", "The SmartFix-Matrix access point remains active.") + "</div></div></details>";
 
   page += "<details class='card config-section' id='section-ota'>";
-  page += "<summary><span class='section-icon'>&#9889;</span><span class='summary-text'>" + L("GitHub OTA Firmware", "GitHub OTA firmware") + "</span><span class='sumvalue'>" + htmlEscape(lastOtaStatus) + "</span><span class='chev'>+</span></summary><div class='detail-body'>";
-  page += "<form action='/ota-save' method='POST'><input name='url' maxlength='220' value='" + htmlEscape(otaUrl) + "'>";
-  page += "<button class='btn green' type='submit'>" + L("OTA URL speichern", "Save OTA URL") + "</button></form>";
+  page += "<summary><span class='section-icon'>&#9889;</span><span class='summary-text'>" + L("Firmware Update", "Firmware update") + "</span><span class='sumvalue'>" + htmlEscape(lastOtaStatus) + "</span><span class='chev'>+</span></summary><div class='detail-body'>";
+  page += "<div class='hint'>" + L("Der GitHub Update-Check läuft automatisch, sobald Home WiFi verbunden ist. Die OTA URL wird fest aus dem Projekt verwendet und muss nicht konfiguriert werden.", "The GitHub update check runs automatically when Home WiFi is connected. The OTA URL is fixed by the project and does not need user configuration.") + "</div>";
+  page += "<div class='sub' style='margin-top:12px;'>" + L("Letzter Check", "Last check") + ": " + htmlEscape(lastUpdateCheckText) + "<br>" + L("Neueste Version", "Latest version") + ": " + htmlEscape(latestFirmwareVersion) + "</div>";
+  page += "<h2>" + L("OTA BIN manuell flashen", "Flash OTA BIN manually") + "</h2>";
+  page += "<form method='POST' action='/ota-upload' enctype='multipart/form-data'>";
+  page += "<input type='file' name='firmware' accept='.bin' required>";
+  page += "<button class='btn green' type='submit'>" + L("OTA BIN hochladen und flashen", "Upload and flash OTA BIN") + "</button></form>";
+  page += "<div class='hint'>" + L("Wichtig: Hier nur die SmartFix-Matrix-ota.bin verwenden, nicht die USB-Full-BIN.", "Important: use only SmartFix-Matrix-ota.bin here, not the USB full BIN.") + "</div>";
   page += "<div class='buttons' style='margin-top:10px;'>";
-  page += htmlButton(L("OTA Update starten", "Start OTA update"), "/ota-start");
   page += htmlButton("Refresh", "/");
   page += "</div><div class='hint'>" + L("Status", "Status") + ": " + htmlEscape(lastOtaStatus) + "</div></div></details>";
 
@@ -359,7 +451,7 @@ static void handleScrollEffect() {
     int value = server.arg("e").toInt();
 
     if (value < SCROLL_EFFECT_NORMAL) value = SCROLL_EFFECT_NORMAL;
-    if (value > SCROLL_EFFECT_FLASH) value = SCROLL_EFFECT_FLASH;
+    if (value > SCROLL_EFFECT_DUAL_SLIDE) value = SCROLL_EFFECT_DUAL_SLIDE;
 
     scrollTextEffectMode = (uint8_t)value;
     saveScrollEffectSetting();
@@ -379,7 +471,7 @@ static void handleLogoEffect() {
     int value = server.arg("e").toInt();
 
     if (value < LOGO_EFFECT_STATIC) value = LOGO_EFFECT_STATIC;
-    if (value > LOGO_EFFECT_SCANLINE) value = LOGO_EFFECT_SCANLINE;
+    if (value > LOGO_EFFECT_DUAL_SLIDE) value = LOGO_EFFECT_DUAL_SLIDE;
 
     logoEffectMode = (uint8_t)value;
     saveLogoEffectSetting();
@@ -423,9 +515,13 @@ static void handleSpeed() {
     saveSpeedSetting();
 
     autoModeDemo = false;
-    setMode(MODE_SCROLL_TEXT, true);
+    if (server.hasArg("target") && server.arg("target") == "logo") {
+      clearDisplay();
+    } else {
+      setMode(MODE_SCROLL_TEXT, true);
+    }
 
-    Serial.print("Scroll speed changed to: ");
+    Serial.print("Speed changed to: ");
     Serial.print(scrollInterval);
     Serial.println(" ms");
   }
@@ -588,31 +684,59 @@ static void handleWifiForget() {
   ESP.restart();
 }
 
-static void handleOtaSave() {
-  if (server.hasArg("url")) {
-    otaUrl = server.arg("url");
-    otaUrl.trim();
-
-    if (otaUrl.length() == 0) {
-      otaUrl = DEFAULT_OTA_URL;
-    }
-
-    saveOtaSettings();
+static void handleOtaUploadFinished() {
+  if (Update.hasError()) {
+    lastOtaStatus = "Manuelles OTA fehlgeschlagen.";
+    server.send(500, "text/html",
+                "<html><body style='background:#0b0f14;color:white;font-family:Arial;text-align:center;padding-top:40px;'>"
+                "<h1>SmartFix Matrix OTA</h1>"
+                "<p>Upload fehlgeschlagen.</p>"
+                "<p>Bitte SmartFix-Matrix-ota.bin verwenden.</p>"
+                "</body></html>");
+    return;
   }
 
-  redirectHome();
-}
-
-static void handleOtaStart() {
+  lastOtaStatus = "Manuelles OTA OK. Neustart...";
   server.send(200, "text/html",
               "<html><body style='background:#0b0f14;color:white;font-family:Arial;text-align:center;padding-top:40px;'>"
               "<h1>SmartFix Matrix OTA</h1>"
-              "<p>OTA Update wurde gestartet.</p>"
-              "<p>Bitte warten. Bei Erfolg startet das Ger&auml;t automatisch neu.</p>"
+              "<p>Firmware wurde hochgeladen.</p>"
+              "<p>Neustart...</p>"
               "</body></html>");
+  delay(1000);
+  ESP.restart();
+}
 
-  delay(500);
-  startOtaUpdateFromSavedUrl();
+static void handleOtaFileUpload() {
+  HTTPUpload &upload = server.upload();
+
+  if (upload.status == UPLOAD_FILE_START) {
+    Serial.print("Manual OTA upload: ");
+    Serial.println(upload.filename);
+    lastOtaStatus = "Manuelles OTA Upload gestartet.";
+
+    if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
+      Update.printError(Serial);
+      lastOtaStatus = "Manuelles OTA Fehler: Start fehlgeschlagen.";
+    }
+  } else if (upload.status == UPLOAD_FILE_WRITE) {
+    if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+      Update.printError(Serial);
+      lastOtaStatus = "Manuelles OTA Fehler: Schreiben fehlgeschlagen.";
+    }
+  } else if (upload.status == UPLOAD_FILE_END) {
+    if (Update.end(true)) {
+      Serial.print("Manual OTA uploaded bytes: ");
+      Serial.println(upload.totalSize);
+      lastOtaStatus = "Manuelles OTA erfolgreich.";
+    } else {
+      Update.printError(Serial);
+      lastOtaStatus = "Manuelles OTA Fehler: Update.end fehlgeschlagen.";
+    }
+  } else if (upload.status == UPLOAD_FILE_ABORTED) {
+    Update.end();
+    lastOtaStatus = "Manuelles OTA abgebrochen.";
+  }
 }
 
 static void handleFactoryReset() {
@@ -645,8 +769,7 @@ void setupWebServer() {
   server.on("/wifi-scan", HTTP_GET, handleWifiScan);
   server.on("/wifi-save", HTTP_POST, handleWifiSave);
   server.on("/wifi-forget", HTTP_GET, handleWifiForget);
-  server.on("/ota-save", HTTP_POST, handleOtaSave);
-  server.on("/ota-start", HTTP_GET, handleOtaStart);
+  server.on("/ota-upload", HTTP_POST, handleOtaUploadFinished, handleOtaFileUpload);
   server.on("/factory-reset", HTTP_GET, handleFactoryReset);
 
   server.onNotFound([]() {

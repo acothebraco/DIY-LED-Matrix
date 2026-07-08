@@ -15,8 +15,13 @@ void loadSettings() {
     scrollTextColorMode = 0;
   }
 
+  scrollTextEffectMode = prefs.getUChar("scrollFx", SCROLL_EFFECT_NORMAL);
+  if (scrollTextEffectMode > SCROLL_EFFECT_FLASH) {
+    scrollTextEffectMode = SCROLL_EFFECT_NORMAL;
+  }
+
   logoEffectMode = prefs.getUChar("logoFx", LOGO_EFFECT_STATIC);
-  if (logoEffectMode > LOGO_EFFECT_PULSE) {
+  if (logoEffectMode > LOGO_EFFECT_SCANLINE) {
     logoEffectMode = LOGO_EFFECT_STATIC;
   }
 
@@ -69,6 +74,8 @@ void loadSettings() {
   Serial.println(matrixBrightness);
   Serial.print("Text Color: ");
   Serial.println(getScrollTextColorName());
+  Serial.print("Scroll Effect: ");
+  Serial.println(getScrollTextEffectName());
   Serial.print("Logo Effect: ");
   Serial.println(getLogoEffectName());
   Serial.print("Logo Color: ");
@@ -111,6 +118,12 @@ void saveTextColorSetting() {
   prefs.putUChar("txtColor", scrollTextColorMode);
   Serial.print("Text color saved: ");
   Serial.println(getScrollTextColorName());
+}
+
+void saveScrollEffectSetting() {
+  prefs.putUChar("scrollFx", scrollTextEffectMode);
+  Serial.print("Scroll effect saved: ");
+  Serial.println(getScrollTextEffectName());
 }
 
 void saveLogoEffectSetting() {

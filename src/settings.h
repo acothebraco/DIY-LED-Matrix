@@ -8,6 +8,7 @@ void saveModeSettings();
 void saveBrightnessSetting();
 void saveSpeedSetting();
 void saveTextColorSetting();
+void saveScrollEffectSetting();
 void saveLogoEffectSetting();
 void saveLogoColorSetting();
 void saveScrollTextSetting();

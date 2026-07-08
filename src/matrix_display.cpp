@@ -306,6 +306,86 @@ static void drawHeaderSparkles(int16_t x, int16_t y) {
   }
 }
 
+static int8_t triangleWaveOffset(uint16_t phase, int8_t amplitude) {
+  phase %= 24;
+  if (phase > 12) {
+    phase = 24 - phase;
+  }
+  return ((int16_t)phase * amplitude * 2 / 12) - amplitude;
+}
+
+static void drawLogoWaveText(const String &text, int16_t x, int16_t y, bool isBrand, uint8_t brightnessScale, bool bounceOnly) {
+  int16_t cursorX = x;
+  uint8_t wordIndex = 0;
+  uint16_t t = millis() / 70;
+  int8_t globalBounce = bounceOnly ? triangleWaveOffset(millis() / 85, 2) : 0;
+
+  for (uint16_t i = 0; i < text.length(); i++) {
+    char c = text[i];
+
+    if (c == ' ') {
+      cursorX += 6;
+      wordIndex++;
+      continue;
+    }
+
+    uint8_t partIndex = isBrand ? (i < 5 ? 0 : 1) : wordIndex;
+    int8_t yOffset = globalBounce;
+
+    if (!bounceOnly) {
+      yOffset = triangleWaveOffset(t + i * 3, 2);
+    }
+
+    String ch = String(c);
+    printText(ch, cursorX + 1, y + 1 + yOffset, logoShadowColor(partIndex, brightnessScale));
+    printText(ch, cursorX, y + yOffset, logoMainColor(partIndex, brightnessScale));
+
+    cursorX += 6;
+    if (isBrand && i == 4) {
+      cursorX += 2;
+    }
+
+    if (!isBrand && (c == '-' || c == '_')) {
+      wordIndex++;
+    }
+  }
+}
+
+static void drawLogoGlitchOverlay(const String &text, int16_t x, int16_t y, bool isBrand) {
+  uint8_t phase = (millis() / 70) % 24;
+
+  if (phase > 5) {
+    return;
+  }
+
+  // Short red/blue offsets. It looks like a glitch but stays readable.
+  uint16_t glitchRed = scaledColor(255, 35, 35, 120);
+  uint16_t glitchBlue = scaledColor(50, 150, 255, 120);
+
+  if (isBrand) {
+    printText("SmartFix", x + 1, y, glitchRed);
+    printText("SmartFix", x - 1, y + 1, glitchBlue);
+  } else {
+    printText(text, x + 1, y, glitchRed);
+    printText(text, x - 1, y + 1, glitchBlue);
+  }
+
+  int16_t lineY = y + 2 + (phase % 6);
+  display->drawFastHLine(0, lineY, PANEL_RES_X, glitchBlue);
+}
+
+static void drawLogoScanline(int16_t x, int16_t y, uint8_t textWidth) {
+  uint16_t phase = (millis() / 35) % (textWidth + 18);
+  int16_t scanX = x - 8 + phase;
+
+  for (int8_t dx = 0; dx < 2; dx++) {
+    int16_t px = scanX + dx;
+    if (px >= 0 && px < PANEL_RES_X) {
+      display->drawFastVLine(px, y - 1, 10, scaledColor(255, 255, 255, 170));
+    }
+  }
+}
+
 void drawHeader() {
   display->setTextWrap(false);
   display->setTextSize(1);
@@ -355,14 +435,24 @@ void drawHeader() {
     fadeScale = clampScale(150 + ((uint16_t)phase * 105 / 255));
   }
 
-  if (isBrand) {
-    drawBrandWordmark(baseX, baseY, revealChars, fadeScale, shimmerIndex);
+  if (logoEffectMode == LOGO_EFFECT_WAVE) {
+    drawLogoWaveText(isBrand ? String("SmartFix") : text, baseX, baseY, isBrand, fadeScale, false);
+  } else if (logoEffectMode == LOGO_EFFECT_BOUNCE) {
+    drawLogoWaveText(isBrand ? String("SmartFix") : text, baseX, baseY, isBrand, fadeScale, true);
   } else {
-    drawGenericLogoText(text, baseX, baseY, revealChars, fadeScale, shimmerIndex);
+    if (isBrand) {
+      drawBrandWordmark(baseX, baseY, revealChars, fadeScale, shimmerIndex);
+    } else {
+      drawGenericLogoText(text, baseX, baseY, revealChars, fadeScale, shimmerIndex);
+    }
   }
 
   if (logoEffectMode == LOGO_EFFECT_SPARKLE || logoEffectMode == LOGO_EFFECT_PULSE) {
     drawHeaderSparkles(baseX, baseY);
+  } else if (logoEffectMode == LOGO_EFFECT_GLITCH) {
+    drawLogoGlitchOverlay(isBrand ? String("SmartFix") : text, baseX, baseY, isBrand);
+  } else if (logoEffectMode == LOGO_EFFECT_SCANLINE) {
+    drawLogoScanline(baseX, baseY, isBrand ? 50 : getTextPixelWidth(text));
   }
 
   // Blue separator line intentionally removed.

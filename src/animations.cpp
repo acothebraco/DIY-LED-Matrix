@@ -16,6 +16,58 @@ void resetAnimationState() {
   lastFullRedraw = 0;
 }
 
+static uint16_t scaledMatrixColor(uint8_t r, uint8_t g, uint8_t b, uint8_t scale) {
+  return makeColor((uint16_t)r * scale / 255,
+                   (uint16_t)g * scale / 255,
+                   (uint16_t)b * scale / 255);
+}
+
+static uint16_t scrollPaletteColor(uint8_t index, uint8_t scale = 255) {
+  switch (index % 5) {
+    case 0: return scaledMatrixColor(0, 255, 80, scale);
+    case 1: return scaledMatrixColor(0, 120, 255, scale);
+    case 2: return scaledMatrixColor(255, 220, 0, scale);
+    case 3: return scaledMatrixColor(255, 40, 35, scale);
+    default: return scaledMatrixColor(255, 255, 255, scale);
+  }
+}
+
+static uint16_t selectedScrollColorScaled(uint8_t scale) {
+  switch (scrollTextColorMode) {
+    case 1: return scaledMatrixColor(0, 255, 80, scale);
+    case 2: return scaledMatrixColor(0, 120, 255, scale);
+    case 3: return scaledMatrixColor(255, 220, 0, scale);
+    case 4: return scaledMatrixColor(255, 40, 35, scale);
+    case 0:
+    default: return scaledMatrixColor(255, 255, 255, scale);
+  }
+}
+
+static int8_t scrollWaveOffset(uint16_t phase, int8_t amplitude) {
+  phase %= 24;
+  if (phase > 12) {
+    phase = 24 - phase;
+  }
+  return ((int16_t)phase * amplitude * 2 / 12) - amplitude;
+}
+
+static void printScrollChar(char c, int16_t x, int16_t y, uint16_t color) {
+  display->setTextWrap(false);
+  display->setTextSize(1);
+  display->setTextColor(color);
+  display->setCursor(x, y);
+  display->print(c);
+}
+
+static void drawScrollSparkles(unsigned long now) {
+  for (uint8_t i = 0; i < 5; i++) {
+    int16_t px = (now / 55 + i * 17) % PANEL_RES_X;
+    int16_t py = 15 + ((now / 90 + i * 7) % 15);
+    uint16_t color = scrollPaletteColor(i + now / 160, 180);
+    display->drawPixel(px, py, color);
+  }
+}
+
 static void drawScrollingText() {
   unsigned long now = millis();
 
@@ -27,9 +79,46 @@ static void drawScrollingText() {
 
     display->setTextWrap(false);
     display->setTextSize(1);
-    display->setTextColor(getScrollTextColor());
-    display->setCursor(scrollX, 20);
-    display->print(scrollText);
+
+    if (scrollTextEffectMode == SCROLL_EFFECT_NORMAL) {
+      display->setTextColor(getScrollTextColor());
+      display->setCursor(scrollX, 20);
+      display->print(scrollText);
+    } else {
+      int16_t cursorX = scrollX;
+
+      for (uint16_t i = 0; i < scrollText.length(); i++) {
+        char c = scrollText[i];
+
+        if (cursorX > -7 && cursorX < PANEL_RES_X) {
+          int16_t y = 20;
+          uint16_t color = getScrollTextColor();
+
+          if (scrollTextEffectMode == SCROLL_EFFECT_RAINBOW) {
+            color = scrollPaletteColor(i + now / 120);
+          } else if (scrollTextEffectMode == SCROLL_EFFECT_WAVE) {
+            y += scrollWaveOffset(now / 70 + i * 3, 2);
+          } else if (scrollTextEffectMode == SCROLL_EFFECT_SPARKLE) {
+            color = (((i + now / 90) % 9) == 0) ? white : getScrollTextColor();
+          } else if (scrollTextEffectMode == SCROLL_EFFECT_COMET) {
+            printScrollChar(c, cursorX + 3, y, selectedScrollColorScaled(45));
+            printScrollChar(c, cursorX + 2, y, selectedScrollColorScaled(75));
+            printScrollChar(c, cursorX + 1, y, selectedScrollColorScaled(110));
+            color = selectedScrollColorScaled(255);
+          } else if (scrollTextEffectMode == SCROLL_EFFECT_FLASH) {
+            color = ((now / 350) % 2 == 0) ? white : getScrollTextColor();
+          }
+
+          printScrollChar(c, cursorX, y, color);
+        }
+
+        cursorX += 6;
+      }
+
+      if (scrollTextEffectMode == SCROLL_EFFECT_SPARKLE) {
+        drawScrollSparkles(now);
+      }
+    }
 
     scrollX--;
 

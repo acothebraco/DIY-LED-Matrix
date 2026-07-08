@@ -15,6 +15,7 @@ String logoText = "SmartFix";
 uint8_t matrixBrightness = DEFAULT_BRIGHTNESS;
 uint16_t scrollInterval = DEFAULT_SCROLL_INTERVAL;
 uint8_t scrollTextColorMode = 0; // 0=White, 1=Green, 2=Blue, 3=Yellow, 4=Red
+uint8_t scrollTextEffectMode = SCROLL_EFFECT_NORMAL;
 uint8_t logoEffectMode = LOGO_EFFECT_STATIC;
 uint8_t logoColorMode = LOGO_COLOR_BRAND;
 
@@ -59,6 +60,18 @@ const char *getScrollTextColorName() {
   }
 }
 
+const char *getScrollTextEffectName() {
+  switch (scrollTextEffectMode) {
+    case SCROLL_EFFECT_NORMAL:  return "NORMAL";
+    case SCROLL_EFFECT_RAINBOW: return "RAINBOW";
+    case SCROLL_EFFECT_WAVE:    return "WAVE";
+    case SCROLL_EFFECT_SPARKLE: return "SPARKLE";
+    case SCROLL_EFFECT_COMET:   return "COMET";
+    case SCROLL_EFFECT_FLASH:   return "FLASH";
+    default:                    return "NORMAL";
+  }
+}
+
 const char *getLogoColorName() {
   switch (logoColorMode) {
     case LOGO_COLOR_BRAND:     return "AUTO/BRAND";
@@ -82,6 +95,10 @@ const char *getLogoEffectName() {
     case LOGO_EFFECT_SHIMMER:    return "SHIMMER";
     case LOGO_EFFECT_SPARKLE:    return "SPARKLE";
     case LOGO_EFFECT_PULSE:      return "PULSE";
+    case LOGO_EFFECT_WAVE:       return "WAVE";
+    case LOGO_EFFECT_BOUNCE:     return "BOUNCE";
+    case LOGO_EFFECT_GLITCH:     return "GLITCH";
+    case LOGO_EFFECT_SCANLINE:   return "SCANLINE";
     default:                     return "STATISCH";
   }
 }

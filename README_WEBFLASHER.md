@@ -38,3 +38,15 @@ The OTA binary is still used only for OTA updates from the device web interface:
 SmartFix-Matrix-ota.bin
 ```
 
+
+## Firmware version display
+
+The GitHub Pages workflow reads the firmware version directly from:
+
+```cpp
+#define FIRMWARE_VERSION "x.y.z"
+```
+
+in `src/config.h` and replaces the placeholders in `web/flash/index.html` and `web/flash/manifest.json` during deployment.
+
+So when you update the firmware version in `src/config.h`, the Web Flasher page will show the same version after the next GitHub Actions run.

@@ -64,7 +64,23 @@
     h1 { position: relative; margin: 0; font-size: clamp(38px, 7vw, 72px); line-height: .95; letter-spacing: -.06em; }
     .smart { color: var(--green); text-shadow: 0 0 24px rgba(40,215,80,.2); }
     .fix { color: var(--blue); text-shadow: 0 0 24px rgba(0,168,255,.22); }
-    .sub { position: relative; max-width: 680px; color: var(--muted); font-size: clamp(17px, 2.5vw, 21px); line-height: 1.55; margin: 18px 0 30px; }
+    .sub { position: relative; max-width: 680px; color: var(--muted); font-size: clamp(17px, 2.5vw, 21px); line-height: 1.55; margin: 18px 0 18px; }
+    .firmware-banner {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 0 0 30px;
+      padding: 12px 16px;
+      border: 1px solid rgba(40, 215, 80, .24);
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(40,215,80,.10), rgba(0,168,255,.10));
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.03), 0 0 34px rgba(0,168,255,.10);
+    }
+    .firmware-banner span { color: var(--muted); font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    .firmware-banner strong { color: var(--text); font-size: 22px; line-height: 1; }
+    .firmware-banner small { color: var(--muted); font-size: 13px; }
     .install-card {
       position: relative;
       background: rgba(5, 8, 13, .72);
@@ -107,6 +123,12 @@
       <h1><span class="smart">Smart</span><span class="fix">Fix</span> Matrix</h1>
       <p class="sub">Flash the SmartFix Matrix firmware directly from your browser — no PlatformIO, no local toolchain.</p>
 
+      <div class="firmware-banner" aria-label="Firmware version">
+        <span>Current firmware</span>
+        <strong>v__FWVER__</strong>
+        <small>Build __BUILDDATE__</small>
+      </div>
+
       <div class="install-card">
         <div class="install-head">
           <esp-web-install-button manifest="manifest.json">
@@ -114,7 +136,7 @@
             <span slot="unsupported">Use Chrome or Edge on desktop. Web Serial is required.</span>
             <span slot="not-allowed">This page must be opened via HTTPS or localhost.</span>
           </esp-web-install-button>
-          <span class="version">Installs firmware v__FWVER__</span>
+          <span class="version">USB full flash · Firmware v__FWVER__</span>
         </div>
 
         <ol>

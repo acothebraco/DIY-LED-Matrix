@@ -42,9 +42,14 @@ jobs:
 
       - name: Resolve firmware version
         run: |
-          git fetch --tags --force
-          VER="$(git tag --sort=-v:refname | head -n 1 | sed 's/^v//')"
+          VER="$(grep -E '^[[:space:]]*#define[[:space:]]+FIRMWARE_VERSION[[:space:]]+"' src/config.h | head -n 1 | sed -E 's/.*"([^"]+)".*/\1/')"
+          VER="${VER#v}"
+          if [ -z "$VER" ]; then
+            git fetch --tags --force
+            VER="$(git tag --sort=-v:refname | head -n 1 | sed 's/^v//')"
+          fi
           echo "FWVER=${VER:-dev}" >> "$GITHUB_ENV"
+          echo "BUILDDATE=$(date -u +%Y-%m-%d)" >> "$GITHUB_ENV"
           echo "Firmware version: ${VER:-dev}"
 
       - name: Build firmware
@@ -56,7 +61,7 @@ jobs:
           mkdir -p site
           cp web/flash/index.html web/flash/manifest.json site/
 
-          sed -i -E "s/__FWVER__/${FWVER:-dev}/g" site/index.html site/manifest.json
+          sed -i -E "s/__FWVER__/${FWVER:-dev}/g; s/__BUILDDATE__/${BUILDDATE:-unknown}/g" site/index.html site/manifest.json
 
           if [ -f "$B/SmartFix-Matrix-usb.bin" ]; then
             cp "$B/SmartFix-Matrix-usb.bin" site/SmartFix-Matrix-usb.bin

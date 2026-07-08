@@ -2,9 +2,26 @@
 
 A modular ESP32-S3 firmware for a SmartFix Elektronikservice LED matrix sign using a Waveshare ESP32-S3 RGB Matrix board and a 64×32 HUB75 RGB LED panel.
 
-The display shows a custom SmartFix header, scrolling service text, pixel-art effects, random animations, configurable colors, brightness, WiFi settings, and OTA firmware updates from GitHub Releases.
+The display shows a custom SmartFix header, scrolling service text, pixel-art effects, random animations, configurable colors, brightness, WiFi settings, and OTA firmware updates from GitHub Releases. A GitHub Pages based web flasher is also included for easy USB installation directly from Chrome or Edge.
 
 > Project status: active development / maker project.
+
+---
+
+## About
+
+SmartFix Matrix is a custom LED matrix sign project for **SmartFix Elektronikservice**.  
+It runs on an ESP32-S3 with a HUB75 RGB LED matrix panel and displays a branded SmartFix header, scrolling service messages, pixel-art animations, and configurable visual effects.
+
+The project is built with **PlatformIO** and the **Arduino framework** and is designed to be easy to maintain and extend.  
+The firmware is split into multiple modules for display handling, animations, settings, WiFi, web configuration, and OTA updates.
+
+The ESP32 creates its own configuration WiFi access point and can also connect to a home WiFi network.  
+From the web interface, the display text, brightness, animation mode, logo/header effect, colors, WiFi settings, and GitHub OTA update URL can be changed without reflashing the device.
+
+For first installation or recovery flashing, the project also provides a browser-based USB web flasher powered by ESP Web Tools and GitHub Pages.
+
+The goal of this project is to create a reliable, upgradeable, and visually attractive LED sign for electronics repair services, console repair, refurbished devices, and SmartFix workshop branding.
 
 ---
 
@@ -49,6 +66,7 @@ Suggested image block:
 - Integrated WiFi access point for configuration
 - Optional home WiFi connection
 - OTA firmware update from GitHub Release asset
+- Browser-based USB web flasher via GitHub Pages
 - Persistent settings stored in ESP32 NVS / Preferences
 - Separate build outputs for:
   - USB full flash binary
@@ -143,6 +161,41 @@ pio device monitor
 ```
 
 If upload does not start automatically, hold **BOOT**, tap **RESET**, then start upload again.
+
+---
+
+## Browser web flasher
+
+SmartFix Matrix includes a GitHub Pages based web flasher for easy first-time USB flashing or recovery flashing without installing PlatformIO.
+
+Web flasher page:
+
+```text
+https://acothebraco.github.io/SmartFix-Matrix/
+```
+
+Requirements:
+
+- Google Chrome or Microsoft Edge on desktop
+- USB data cable
+- GitHub Pages enabled for this repository
+- Browser permission to access the ESP32-S3 serial port
+
+The web flasher uses the full USB image:
+
+```text
+SmartFix-Matrix-usb.bin
+```
+
+It does **not** use the OTA binary. The OTA binary is only for firmware updates from the SmartFix Matrix web interface.
+
+To enable the web flasher on GitHub:
+
+```text
+Repository → Settings → Pages → Source: GitHub Actions
+```
+
+The GitHub Actions workflow builds the firmware and publishes the web flasher automatically after pushing to `main`.
 
 ---
 
@@ -242,9 +295,10 @@ Important:
 ## Repository layout
 
 ```text
-.github/workflows/     optional GitHub Actions build/release workflows
+.github/workflows/     GitHub Actions workflows for Pages/web flasher
 scripts/               helper scripts, binary export scripts
 src/                   firmware source code
+web/flash/             ESP Web Tools browser flasher page
 platformio.ini         PlatformIO project configuration
 README.md              project documentation
 ```
@@ -277,9 +331,8 @@ git push origin v1.2.0
 
 Planned / possible future improvements:
 
-- GitHub Actions release workflow
+- GitHub Actions release workflow for release assets
 - Automatic upload of OTA and USB binaries to GitHub Releases
-- Browser-based ESP Web Tools flasher
 - More SmartFix header fonts
 - More pixel-art animations
 - Multi-panel support for 128×32 or 64×64

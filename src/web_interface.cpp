@@ -86,43 +86,49 @@ static String htmlPage() {
   page += "<!DOCTYPE html><html lang='de'><head>";
   page += "<meta charset='UTF-8'>";
   page += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+  page += "<meta name='theme-color' content='#050812'>";
   page += "<title>SmartFix Matrix</title>";
-  page += "<style>";
-  page += "body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#0b0f14;color:#e5e7eb;}";
-  page += ".wrap{max-width:780px;margin:0 auto;padding:22px;}";
-  page += ".card{background:#111827;border:1px solid #1f2937;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);}";
-  page += "h1{margin:0 0 6px;font-size:28px;color:#22c55e;}";
-  page += "h2{margin:0 0 14px;font-size:18px;color:#60a5fa;}";
-  page += ".sub{color:#9ca3af;margin-bottom:18px;}";
-  page += ".status{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;}";
-  page += ".pill{background:#020617;border:1px solid #334155;border-radius:12px;padding:10px;}";
-  page += ".label{font-size:12px;color:#94a3b8;}";
-  page += ".value{font-size:17px;font-weight:bold;color:#f8fafc;margin-top:4px;word-break:break-word;}";
-  page += ".buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;}";
-  page += ".btn{display:block;text-align:center;text-decoration:none;background:#2563eb;color:white;padding:14px;border-radius:12px;font-weight:bold;}";
-  page += ".btn:hover{background:#1d4ed8;}";
-  page += ".btn.green{background:#16a34a;}";
-  page += ".btn.green:hover{background:#15803d;}";
-  page += "input{width:100%;box-sizing:border-box;background:#020617;color:#e5e7eb;border:1px solid #334155;border-radius:12px;padding:14px;font-size:16px;margin-bottom:12px;}";
-  page += "button.btn{border:0;width:100%;cursor:pointer;}";
-  page += ".small{font-size:13px;color:#94a3b8;margin-top:18px;text-align:center;}";
-  page += "</style>";
-  page += "<script>";
-  page += "window.addEventListener('beforeunload',function(){sessionStorage.setItem('sf_scroll',window.scrollY);});";
-  page += "window.addEventListener('load',function(){var y=sessionStorage.getItem('sf_scroll');if(y!==null){window.scrollTo(0,parseInt(y));sessionStorage.removeItem('sf_scroll');}});";
-  page += "</script>";
+  page += R"rawliteral(
+<style>
+:root{--bg:#050812;--panel:#0d1320;--panel2:#111827;--line:#223149;--text:#e5e7eb;--muted:#94a3b8;--green:#22c55e;--green2:#16a34a;--blue:#38bdf8;--blue2:#2563eb;--danger:#ef4444;}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:radial-gradient(circle at 18% 0%,rgba(34,197,94,.20),transparent 34%),radial-gradient(circle at 88% 10%,rgba(56,189,248,.16),transparent 32%),linear-gradient(180deg,#050812 0%,#08111f 55%,#050812 100%);color:var(--text);min-height:100vh;}
+a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:relative;overflow:hidden;border:1px solid rgba(148,163,184,.22);border-radius:26px;background:linear-gradient(145deg,rgba(17,24,39,.93),rgba(2,6,23,.92));box-shadow:0 22px 70px rgba(0,0,0,.45);padding:22px;margin-bottom:16px}.hero:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(34,197,94,.10),transparent 40%,rgba(56,189,248,.10));pointer-events:none}.topbar{position:relative;display:flex;align-items:center;gap:15px;margin-bottom:18px}.logo-badge{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-weight:900;font-size:20px;color:white;background:linear-gradient(135deg,var(--green),var(--blue));box-shadow:0 0 32px rgba(34,197,94,.28)}.title-block h1{margin:0;font-size:31px;letter-spacing:-.8px}.title-block .sub{margin:5px 0 0;color:var(--muted)}.version-chip{margin-left:auto;background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.36);color:#bbf7d0;padding:8px 12px;border-radius:999px;font-size:13px;font-weight:bold;white-space:nowrap}.status{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pill{background:rgba(2,6,23,.72);border:1px solid rgba(148,163,184,.18);border-radius:16px;padding:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}.pill.good{border-color:rgba(34,197,94,.32)}.pill.blue{border-color:rgba(56,189,248,.28)}.label{font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--muted)}.value{font-size:16px;font-weight:bold;color:#f8fafc;margin-top:5px;word-break:break-word}.card{background:linear-gradient(145deg,rgba(17,24,39,.92),rgba(12,18,30,.92));border:1px solid rgba(148,163,184,.18);border-radius:22px;margin-bottom:12px;box-shadow:0 12px 36px rgba(0,0,0,.28)}details.card{overflow:hidden}summary{cursor:pointer;list-style:none;padding:18px 20px;display:flex;align-items:center;gap:12px;user-select:none}summary::-webkit-details-marker{display:none}.section-icon{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.25);color:#7dd3fc;font-size:18px}.summary-text{font-size:18px;font-weight:800;color:#f8fafc}.sumvalue{margin-left:auto;color:var(--muted);font-size:13px;font-weight:bold;text-align:right}.chev{margin-left:8px;color:var(--green);font-size:22px;line-height:1;transition:.18s transform}details[open] .chev{transform:rotate(45deg)}.detail-body{padding:0 20px 20px;border-top:1px solid rgba(148,163,184,.11)}h2{margin:18px 0 12px;font-size:15px;color:#7dd3fc;text-transform:uppercase;letter-spacing:.5px}.sub{color:var(--muted);font-size:14px;line-height:1.45}.hint{margin-top:12px;padding:12px;border:1px solid rgba(34,197,94,.24);background:rgba(34,197,94,.08);border-radius:14px;color:#bbf7d0}.buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.btn{display:flex;align-items:center;justify-content:center;min-height:46px;text-align:center;text-decoration:none;border:1px solid rgba(148,163,184,.18);background:linear-gradient(135deg,rgba(37,99,235,.95),rgba(14,165,233,.82));color:white;padding:12px;border-radius:14px;font-weight:800;box-shadow:0 10px 22px rgba(37,99,235,.17);transition:.16s transform,.16s filter,.16s border-color}.btn:hover{filter:brightness(1.12);transform:translateY(-1px);border-color:rgba(125,211,252,.45)}.btn.green{background:linear-gradient(135deg,var(--green2),var(--green));box-shadow:0 10px 22px rgba(34,197,94,.17)}.btn.dark{background:rgba(15,23,42,.92)}.btn.danger{background:linear-gradient(135deg,#b91c1c,var(--danger))}button.btn{border:0;width:100%;cursor:pointer;font-size:15px}input{width:100%;background:rgba(2,6,23,.78);color:var(--text);border:1px solid rgba(148,163,184,.22);border-radius:15px;padding:14px 15px;font-size:16px;margin-bottom:12px;outline:none}input:focus{border-color:rgba(56,189,248,.65);box-shadow:0 0 0 3px rgba(56,189,248,.12)}.small{font-size:13px;color:var(--muted);margin:18px 0 4px;text-align:center}.row-title{display:flex;align-items:center;justify-content:space-between;margin:18px 0 10px}.mini-chip{font-size:12px;color:#bbf7d0;background:rgba(34,197,94,.10);border:1px solid rgba(34,197,94,.25);border-radius:999px;padding:5px 9px}@media(max-width:760px){.wrap{padding:14px}.hero{padding:18px;border-radius:22px}.topbar{align-items:flex-start}.version-chip{display:none}.status{grid-template-columns:1fr 1fr}.buttons{grid-template-columns:1fr}.sumvalue{display:none}.title-block h1{font-size:27px}}@media(max-width:460px){.status{grid-template-columns:1fr}.logo-badge{width:46px;height:46px}.summary-text{font-size:16px}}
+</style>
+<script>
+(function(){
+  var key='sf_open_sections_v2';
+  function ids(){var a=[];document.querySelectorAll('details.config-section').forEach(function(d){if(d.open&&d.id)a.push(d.id);});return a;}
+  function save(){try{localStorage.setItem(key,JSON.stringify(ids()));sessionStorage.setItem('sf_scroll',String(window.scrollY||0));}catch(e){}}
+  function openByHash(){var h=location.hash?location.hash.substring(1):'';if(!h)return false;var el=document.getElementById(h);if(el&&el.tagName&&el.tagName.toLowerCase()==='details'){el.open=true;setTimeout(function(){el.scrollIntoView({block:'start'});},80);return true;}return false;}
+  window.addEventListener('load',function(){
+    var restored=false;
+    try{var raw=localStorage.getItem(key);if(raw){var arr=JSON.parse(raw);document.querySelectorAll('details.config-section').forEach(function(d){d.open=arr.indexOf(d.id)>=0;});restored=true;}}catch(e){}
+    if(!restored){var d=document.getElementById('section-mode');if(d)d.open=true;}
+    var hashOpened=openByHash();
+    document.querySelectorAll('details.config-section').forEach(function(d){d.addEventListener('toggle',save);});
+    document.querySelectorAll('a.btn,button.btn,form').forEach(function(el){el.addEventListener(el.tagName.toLowerCase()==='form'?'submit':'click',save);});
+    if(!hashOpened){var y=sessionStorage.getItem('sf_scroll');if(y!==null){setTimeout(function(){window.scrollTo(0,parseInt(y)||0);sessionStorage.removeItem('sf_scroll');},40);}}
+  });
+  window.addEventListener('beforeunload',save);
+})();
+</script>
+)rawliteral";
   page += "</head><body><div class='wrap'>";
 
-  page += "<div class='card'>";
+  page += "<div class='hero'>";
+  page += "<div class='topbar'><div class='logo-badge'>SF</div><div class='title-block'>";
   page += "<h1>SmartFix Matrix</h1>";
-  page += "<div class='sub'>ESP32-S3 RGB Matrix Control Panel</div>";
+  page += "<div class='sub'>SmartFix Elektronikservice &bull; ESP32-S3 HUB75 Matrix Sign</div>";
+  page += "</div><div class='version-chip'>Firmware v";
+  page += FIRMWARE_VERSION;
+  page += "</div></div>";
   page += "<div class='status'>";
 
-  page += "<div class='pill'><div class='label'>Firmware</div><div class='value'>v";
+  page += "<div class='pill good'><div class='label'>Firmware</div><div class='value'>v";
   page += FIRMWARE_VERSION;
   page += "</div></div>";
 
-  page += "<div class='pill'><div class='label'>Mode</div><div class='value'>";
+  page += "<div class='pill blue'><div class='label'>Mode</div><div class='value'>";
   page += getModeName(currentMode);
   page += "</div></div>";
 
@@ -134,18 +140,20 @@ static String htmlPage() {
   page += String(matrixBrightness);
   page += " / 255</div></div>";
 
-  page += "<div class='pill'><div class='label'>Scroll Speed</div><div class='value'>";
+  page += "<div class='pill'><div class='label'>Scroll</div><div class='value'>";
   page += getSpeedName();
   page += " / ";
-  page += String(scrollInterval);
-  page += " ms</div></div>";
+  page += getScrollTextEffectName();
+  page += "</div></div>";
+
+  page += "<div class='pill'><div class='label'>Logo</div><div class='value'>";
+  page += getLogoEffectName();
+  page += " / ";
+  page += getLogoColorName();
+  page += "</div></div>";
 
   page += "<div class='pill'><div class='label'>Textfarbe</div><div class='value'>";
   page += getScrollTextColorName();
-  page += "</div></div>";
-
-  page += "<div class='pill'><div class='label'>Logo Effekt</div><div class='value'>";
-  page += getLogoEffectName();
   page += "</div></div>";
 
   page += "<div class='pill'><div class='label'>Home WiFi</div><div class='value'>";
@@ -158,55 +166,81 @@ static String htmlPage() {
   page += htmlEscape(getMdnsAddressText());
   page += "</div></div>";
 
-  page += "<div class='pill'><div class='label'>Logo Farbe</div><div class='value'>";
-  page += getLogoColorName();
   page += "</div></div>";
 
-  page += "</div></div>";
-
-  page += "<div class='card'>";
-  page += "<h2>Modus ausw&auml;hlen</h2>";
+  page += "<details class='card config-section' id='section-mode'>";
+  page += "<summary><span class='section-icon'>&#9881;</span><span class='summary-text'>Modus ausw&auml;hlen</span><span class='sumvalue'>";
+  page += getModeName(currentMode);
+  page += "</span><span class='chev'>+</span></summary><div class='detail-body'>";
   page += "<div class='buttons'>";
   page += htmlButton("Laufschrift", "/mode?m=0");
   page += htmlButton("Static Logo", "/mode?m=1");
   page += htmlButton("Pixel Art", "/mode?m=2");
   page += htmlButton("Random FX", "/mode?m=3");
-  page += "</div></div>";
+  page += "</div></div></details>";
 
-  page += "<div class='card'>";
-  page += "<h2>Laufschrift Text</h2>";
+  page += "<details class='card config-section' id='section-scroll'>";
+  page += "<summary><span class='section-icon'>&#9998;</span><span class='summary-text'>Laufschrift</span><span class='sumvalue'>";
+  page += getScrollTextEffectName();
+  page += "</span><span class='chev'>+</span></summary><div class='detail-body'>";
+  page += "<div class='row-title'><h2>Text</h2><span class='mini-chip'>max. 160 Zeichen</span></div>";
   page += "<form action='/set-text' method='GET'>";
   page += "<input name='t' maxlength='160' value='" + htmlEscape(scrollText) + "'>";
   page += "<button class='btn green' type='submit'>Text speichern</button>";
   page += "</form>";
-  page += "<div class='sub' style='margin-top:12px;'>Maximal 160 Zeichen. Umlaute testen wir sp&auml;ter mit eigener Font-Unterst&uuml;tzung.</div>";
+  page += "<h2>Geschwindigkeit</h2>";
+  page += "<div class='buttons'>";
+  page += htmlButton("Langsam", "/speed?v=70");
+  page += htmlButton("Mittel", "/speed?v=35");
+  page += htmlButton("Schnell", "/speed?v=18");
+  page += htmlButton("Turbo", "/speed?v=8");
   page += "</div>";
+  page += "<h2>Farbe</h2>";
+  page += "<div class='buttons'>";
+  page += htmlButton("Weiss", "/text-color?c=0");
+  page += htmlButton("Gruen", "/text-color?c=1");
+  page += htmlButton("Blau", "/text-color?c=2");
+  page += htmlButton("Gelb", "/text-color?c=3");
+  page += htmlButton("Rot", "/text-color?c=4");
+  page += htmlButton("Refresh", "/");
+  page += "</div>";
+  page += "<h2>Text Effekt</h2>";
+  page += "<div class='buttons'>";
+  page += htmlButton("Normal", "/scroll-effect?e=0");
+  page += htmlButton("Rainbow", "/scroll-effect?e=1");
+  page += htmlButton("Wave", "/scroll-effect?e=2");
+  page += htmlButton("Sparkle", "/scroll-effect?e=3");
+  page += htmlButton("Comet Trail", "/scroll-effect?e=4");
+  page += htmlButton("Flash", "/scroll-effect?e=5");
+  page += "</div>";
+  page += "<div class='hint'>Effekte betreffen nur die laufende Textzeile unten.</div>";
+  page += "</div></details>";
 
-  page += "<div class='card' id='logo-text'>";
-  page += "<h2>Logo Text</h2>";
+  page += "<details class='card config-section' id='section-logo'>";
+  page += "<summary><span class='section-icon'>SF</span><span class='summary-text'>Logo / Header</span><span class='sumvalue'>";
+  page += getLogoEffectName();
+  page += "</span><span class='chev'>+</span></summary><div class='detail-body'>";
+  page += "<div class='row-title'><h2>Logo Text</h2><span class='mini-chip'>max. 32 Zeichen</span></div>";
   page += "<form action='/set-logo-text' method='GET'>";
   page += "<input name='t' maxlength='32' value='" + htmlEscape(logoText) + "'>";
   page += "<button class='btn green' type='submit'>Logo Text speichern</button>";
   page += "</form>";
-  page += "<div class='sub' style='margin-top:12px;'>Der Logo-Text kann jetzt einfarbig, zweifarbig oder wortweise mehrfarbig dargestellt werden.</div>";
-  page += "</div>";
-
-  page += "<div class='card'>";
+  page += "<div class='hint'>Der Logo-Text kann einfarbig, zweifarbig oder wortweise mehrfarbig dargestellt werden.</div>";
   page += "<h2>Logo Effekt</h2>";
   page += "<div class='buttons'>";
   page += htmlButton("Statisch", "/logo-effect?e=0");
-  page += htmlButton("Buchstabe f&uuml;r Buchstabe", "/logo-effect?e=1");
-  page += htmlButton("Fade In / Out", "/logo-effect?e=2");
-  page += htmlButton("Slide In", "/logo-effect?e=3");
+  page += htmlButton("Buchstabe", "/logo-effect?e=1");
+  page += htmlButton("Fade", "/logo-effect?e=2");
+  page += htmlButton("Slide", "/logo-effect?e=3");
   page += htmlButton("Shimmer", "/logo-effect?e=4");
   page += htmlButton("Sparkle", "/logo-effect?e=5");
-  page += htmlButton("Pulse Glow", "/logo-effect?e=6");
+  page += htmlButton("Pulse", "/logo-effect?e=6");
+  page += htmlButton("Wave", "/logo-effect?e=7");
+  page += htmlButton("Bounce", "/logo-effect?e=8");
+  page += htmlButton("Glitch", "/logo-effect?e=9");
+  page += htmlButton("Scanline", "/logo-effect?e=10");
   page += htmlButton("Refresh", "/");
   page += "</div>";
-  page += "<div class='sub' style='margin-top:12px;'>Effekte betreffen nur den oberen Logo/Header.</div>";
-  page += "</div>";
-
-  page += "<div class='card'>";
   page += "<h2>Logo Farbe</h2>";
   page += "<div class='buttons'>";
   page += htmlButton("Auto / Brand", "/logo-color?c=0");
@@ -218,51 +252,28 @@ static String htmlPage() {
   page += htmlButton("2-farbig nach Wort", "/logo-color?c=6");
   page += htmlButton("Mehrfarbig nach Wort", "/logo-color?c=7");
   page += "</div>";
-  page += "<div class='sub' style='margin-top:12px;'>Bei mehreren W&ouml;rtern wird jedes Wort einzeln gef&auml;rbt. Beispiel: SmartFix Reparatur Service.</div>";
-  page += "</div>";
+  page += "</div></details>";
 
-  page += "<div class='card'>";
-  page += "<h2>Auto Demo</h2>";
-  page += "<div class='buttons'>";
+  page += "<details class='card config-section' id='section-demo'>";
+  page += "<summary><span class='section-icon'>&#9728;</span><span class='summary-text'>Auto Demo &amp; Helligkeit</span><span class='sumvalue'>";
+  page += autoStatus;
+  page += "</span><span class='chev'>+</span></summary><div class='detail-body'>";
+  page += "<h2>Auto Demo</h2><div class='buttons'>";
   page += "<a class='btn green' href='/auto'>Auto Demo starten</a>";
   page += htmlButton("Refresh", "/");
-  page += "</div></div>";
-
-  page += "<div class='card'>";
-  page += "<h2>Laufschrift Geschwindigkeit</h2>";
-  page += "<div class='buttons'>";
-  page += htmlButton("Langsam", "/speed?v=70");
-  page += htmlButton("Mittel", "/speed?v=35");
-  page += htmlButton("Schnell", "/speed?v=18");
-  page += htmlButton("Turbo", "/speed?v=8");
   page += "</div>";
-  page += "<div class='sub' style='margin-top:12px;'>Kleiner Wert = schnellere Laufschrift.</div>";
-  page += "</div>";
-
-  page += "<div class='card'>";
-  page += "<h2>Laufschrift Farbe</h2>";
-  page += "<div class='buttons'>";
-  page += htmlButton("Weiss", "/text-color?c=0");
-  page += htmlButton("Gruen", "/text-color?c=1");
-  page += htmlButton("Blau", "/text-color?c=2");
-  page += htmlButton("Gelb", "/text-color?c=3");
-  page += htmlButton("Rot", "/text-color?c=4");
-  page += htmlButton("Refresh", "/");
-  page += "</div>";
-  page += "<div class='sub' style='margin-top:12px;'>Farbe der laufenden Textzeile.</div>";
-  page += "</div>";
-
-  page += "<div class='card'>";
   page += "<h2>Helligkeit</h2>";
   page += "<div class='buttons'>";
   page += htmlButton("25%", "/brightness?v=40");
   page += htmlButton("50%", "/brightness?v=80");
   page += htmlButton("75%", "/brightness?v=130");
   page += htmlButton("100%", "/brightness?v=200");
-  page += "</div></div>";
+  page += "</div></div></details>";
 
-  page += "<div class='card' id='wifi'>";
-  page += "<h2>Heim WLAN</h2>";
+  page += "<details class='card config-section' id='wifi'>";
+  page += "<summary><span class='section-icon'>&#128246;</span><span class='summary-text'>Heim WLAN</span><span class='sumvalue'>";
+  page += getWiFiStatusText();
+  page += "</span><span class='chev'>+</span></summary><div class='detail-body'>";
   page += "<form action='/wifi-save' method='POST'>";
   page += "<input name='ssid' maxlength='64' placeholder='SSID' value='" + htmlEscape(wifiSsidValue) + "'>";
   page += "<input name='pass' maxlength='64' placeholder='WLAN Passwort' type='password' value='" + htmlEscape(homeWifiPassword) + "'>";
@@ -274,13 +285,15 @@ static String htmlPage() {
   page += htmlButton("Refresh", "/");
   page += "</div>";
   if (wifiSsidFromScan) {
-    page += "<div class='sub' style='margin-top:12px;color:#22c55e;'>SSID aus Scan &uuml;bernommen. Bitte WLAN Passwort eingeben und speichern.</div>";
+    page += "<div class='hint'>SSID aus Scan &uuml;bernommen. Bitte WLAN Passwort eingeben und speichern.</div>";
   }
-  page += "<div class='sub' style='margin-top:12px;'>Der SmartFix-Matrix Access Point bleibt zus&auml;tzlich aktiv. Beim Scan kann die Verbindung kurz langsam reagieren.</div>";
-  page += "</div>";
+  page += "<div class='sub' style='margin-top:12px;'>Der SmartFix-Matrix Access Point bleibt zus&auml;tzlich aktiv.</div>";
+  page += "</div></details>";
 
-  page += "<div class='card'>";
-  page += "<h2>GitHub OTA Firmware</h2>";
+  page += "<details class='card config-section' id='section-ota'>";
+  page += "<summary><span class='section-icon'>&#9889;</span><span class='summary-text'>GitHub OTA Firmware</span><span class='sumvalue'>";
+  page += htmlEscape(lastOtaStatus);
+  page += "</span><span class='chev'>+</span></summary><div class='detail-body'>";
   page += "<form action='/ota-save' method='POST'>";
   page += "<input name='url' maxlength='220' value='" + htmlEscape(otaUrl) + "'>";
   page += "<button class='btn green' type='submit'>OTA URL speichern</button>";
@@ -289,16 +302,16 @@ static String htmlPage() {
   page += htmlButton("OTA Update starten", "/ota-start");
   page += htmlButton("Refresh", "/");
   page += "</div>";
-  page += "<div class='sub' style='margin-top:12px;'>Status: ";
+  page += "<div class='hint'>Status: ";
   page += htmlEscape(lastOtaStatus);
-  page += "</div></div>";
+  page += "</div></div></details>";
 
-  page += "<div class='card'>";
-  page += "<h2>System</h2>";
+  page += "<details class='card config-section' id='section-system'>";
+  page += "<summary><span class='section-icon'>&#128295;</span><span class='summary-text'>System</span><span class='sumvalue'>Reset</span><span class='chev'>+</span></summary><div class='detail-body'>";
   page += "<div class='buttons'>";
-  page += htmlButton("Werkseinstellungen", "/factory-reset");
+  page += "<a class='btn danger' href='/factory-reset'>Werkseinstellungen</a>";
   page += htmlButton("Refresh", "/");
-  page += "</div></div>";
+  page += "</div></div></details>";
 
   page += "<div class='small'>SmartFix Elektronikservice &bull; Designed for 64x32 HUB75 RGB Matrix</div>";
   page += "</div></body></html>";
@@ -370,12 +383,32 @@ static void handleTextColor() {
   redirectHome();
 }
 
+static void handleScrollEffect() {
+  if (server.hasArg("e")) {
+    int value = server.arg("e").toInt();
+
+    if (value < SCROLL_EFFECT_NORMAL) value = SCROLL_EFFECT_NORMAL;
+    if (value > SCROLL_EFFECT_FLASH) value = SCROLL_EFFECT_FLASH;
+
+    scrollTextEffectMode = (uint8_t)value;
+    saveScrollEffectSetting();
+
+    autoModeDemo = false;
+    setMode(MODE_SCROLL_TEXT, true);
+
+    Serial.print("Scroll effect changed to: ");
+    Serial.println(getScrollTextEffectName());
+  }
+
+  redirectHome();
+}
+
 static void handleLogoEffect() {
   if (server.hasArg("e")) {
     int value = server.arg("e").toInt();
 
     if (value < LOGO_EFFECT_STATIC) value = LOGO_EFFECT_STATIC;
-    if (value > LOGO_EFFECT_PULSE) value = LOGO_EFFECT_PULSE;
+    if (value > LOGO_EFFECT_SCANLINE) value = LOGO_EFFECT_SCANLINE;
 
     logoEffectMode = (uint8_t)value;
     saveLogoEffectSetting();
@@ -488,28 +521,17 @@ static String wifiScanPage() {
   page += "<!DOCTYPE html><html lang='de'><head>";
   page += "<meta charset='UTF-8'>";
   page += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+  page += "<meta name='theme-color' content='#050812'>";
   page += "<title>SmartFix Matrix WLAN Scan</title>";
-  page += "<style>";
-  page += "body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#0b0f14;color:#e5e7eb;}";
-  page += ".wrap{max-width:780px;margin:0 auto;padding:22px;}";
-  page += ".card{background:#111827;border:1px solid #1f2937;border-radius:18px;padding:20px;margin-bottom:16px;box-shadow:0 10px 30px rgba(0,0,0,.35);}";
-  page += "h1{margin:0 0 6px;font-size:28px;color:#22c55e;}";
-  page += "h2{margin:0 0 14px;font-size:18px;color:#60a5fa;}";
-  page += ".sub{color:#9ca3af;margin-bottom:18px;}";
-  page += ".net{display:grid;grid-template-columns:1.4fr .7fr .8fr .8fr;gap:8px;align-items:center;background:#020617;border:1px solid #334155;border-radius:12px;padding:10px;margin-bottom:10px;}";
-  page += ".ssid{font-weight:bold;color:#f8fafc;word-break:break-word;}";
-  page += ".meta{font-size:13px;color:#94a3b8;}";
-  page += ".btn{display:block;text-align:center;text-decoration:none;background:#2563eb;color:white;padding:10px;border-radius:10px;font-weight:bold;}";
-  page += ".btn:hover{background:#1d4ed8;}";
-  page += ".btn.green{background:#16a34a;}";
-  page += ".btn.green:hover{background:#15803d;}";
-  page += "@media(max-width:650px){.net{grid-template-columns:1fr}.btn{text-align:center;}}";
-  page += "</style>";
-  page += "</head><body><div class='wrap'>";
-  page += "<div class='card'>";
-  page += "<h1>SmartFix Matrix</h1>";
-  page += "<h2>WLAN Scan</h2>";
-  page += "<div class='sub'>Gefundene WLAN-Netzwerke. W&auml;hle eine SSID aus, gib danach das Passwort ein und speichere die Verbindung.</div>";
+  page += R"rawliteral(
+<style>
+:root{--bg:#050812;--panel:#0d1320;--line:#223149;--text:#e5e7eb;--muted:#94a3b8;--green:#22c55e;--blue:#38bdf8}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:radial-gradient(circle at 18% 0%,rgba(34,197,94,.20),transparent 34%),radial-gradient(circle at 88% 10%,rgba(56,189,248,.16),transparent 32%),linear-gradient(180deg,#050812 0%,#08111f 55%,#050812 100%);color:var(--text);min-height:100vh}.wrap{max-width:940px;margin:0 auto;padding:22px}.card{background:linear-gradient(145deg,rgba(17,24,39,.93),rgba(2,6,23,.92));border:1px solid rgba(148,163,184,.22);border-radius:26px;padding:22px;margin-bottom:16px;box-shadow:0 22px 70px rgba(0,0,0,.45)}.topbar{display:flex;align-items:center;gap:15px;margin-bottom:18px}.logo-badge{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;font-weight:900;font-size:20px;color:white;background:linear-gradient(135deg,var(--green),var(--blue));box-shadow:0 0 32px rgba(34,197,94,.28)}h1{margin:0;font-size:31px;letter-spacing:-.8px}h2{margin:0 0 14px;font-size:18px;color:#7dd3fc}.sub{color:var(--muted);line-height:1.45;margin-bottom:18px}.net{display:grid;grid-template-columns:1.4fr .7fr .8fr .8fr;gap:10px;align-items:center;background:rgba(2,6,23,.72);border:1px solid rgba(148,163,184,.18);border-radius:16px;padding:12px;margin-bottom:10px}.ssid{font-weight:bold;color:#f8fafc;word-break:break-word}.meta{font-size:13px;color:var(--muted)}.btn{display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none;min-height:42px;background:linear-gradient(135deg,#2563eb,#0ea5e9);color:white;padding:10px 12px;border-radius:13px;font-weight:800}.btn.green{background:linear-gradient(135deg,#16a34a,#22c55e)}.btn:hover{filter:brightness(1.12)}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}@media(max-width:650px){.net{grid-template-columns:1fr}.actions{grid-template-columns:1fr}.wrap{padding:14px}}
+</style>
+)rawliteral";
+  page += "</head><body><div class='wrap'><div class='card'>";
+  page += "<div class='topbar'><div class='logo-badge'>SF</div><div><h1>SmartFix Matrix</h1><div class='sub' style='margin:5px 0 0;'>WLAN Scan</div></div></div>";
+  page += "<h2>Gefundene WLAN-Netzwerke</h2>";
+  page += "<div class='sub'>W&auml;hle eine SSID aus, gib danach das Passwort ein und speichere die Verbindung.</div>";
 
   WiFi.scanDelete();
   int networkCount = WiFi.scanNetworks(false, true);
@@ -548,7 +570,7 @@ static String wifiScanPage() {
 
   WiFi.scanDelete();
 
-  page += "<div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;'>";
+  page += "<div class='actions'>";
   page += "<a class='btn green' href='/wifi-scan'>Erneut scannen</a>";
   page += "<a class='btn' href='/#wifi'>Zur&uuml;ck</a>";
   page += "</div>";
@@ -650,6 +672,7 @@ void setupWebServer() {
   server.on("/brightness", HTTP_GET, handleBrightness);
   server.on("/speed", HTTP_GET, handleSpeed);
   server.on("/text-color", HTTP_GET, handleTextColor);
+  server.on("/scroll-effect", HTTP_GET, handleScrollEffect);
   server.on("/logo-effect", HTTP_GET, handleLogoEffect);
   server.on("/logo-color", HTTP_GET, handleLogoColor);
   server.on("/set-text", HTTP_GET, handleSetText);

@@ -8,6 +8,11 @@ The display shows a custom SmartFix header, scrolling service text, pixel-art ef
 
 ---
 
+<p align="center">
+  <img src="assets/smartfix_matrix_readme_preview.gif" alt="SmartFix Matrix Preview" width="900">
+</p>
+
+
 ## About
 
 SmartFix Matrix is a custom LED matrix sign project for **SmartFix Elektronikservice**.  

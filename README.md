@@ -170,8 +170,8 @@ SmartFix Matrix includes a GitHub Pages based web flasher for easy first-time US
 
 Web flasher page:
 
-```text
-https://acothebraco.github.io/SmartFix-Matrix/
+
+**https://acothebraco.github.io/SmartFix-Matrix/**
 ```
 
 Requirements:

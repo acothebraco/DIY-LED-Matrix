@@ -12,6 +12,7 @@ const unsigned long modeInterval = 10000;
 String scrollText = "ELEKTRONIKSERVICE  -  REPARATUR  -  KONSOLEN  -  SMARTFIX  ";
 String logoText = "SmartFix";
 
+uint8_t panelCount = MAX_PANEL_COUNT;
 uint8_t matrixBrightness = DEFAULT_BRIGHTNESS;
 uint16_t scrollInterval = DEFAULT_SCROLL_INTERVAL;
 uint8_t scrollTextColorMode = 0; // 0=White, 1=Green, 2=Blue, 3=Yellow, 4=Red
@@ -32,6 +33,25 @@ bool firmwareUpdateAvailable = false;
 
 int16_t getTextPixelWidth(const String &text) {
   return getMatrixTextPixelWidth(text);
+}
+
+int16_t getMatrixWidth() {
+  uint8_t count = panelCount;
+  if (count < MIN_PANEL_COUNT) count = MIN_PANEL_COUNT;
+  if (count > MAX_PANEL_COUNT) count = MAX_PANEL_COUNT;
+  return PANEL_RES_X * count;
+}
+
+int16_t getMatrixHeight() {
+  return PANEL_RES_Y;
+}
+
+const char *getPanelLayoutName() {
+  switch (panelCount) {
+    case 1: return "64x32";
+    case 2: return "128x32";
+    default: return "UNKNOWN";
+  }
 }
 
 bool isGermanUi() {
@@ -112,6 +132,22 @@ const char *getLogoEffectName() {
     case LOGO_EFFECT_SCANLINE:   return "SCANLINE";
     case LOGO_EFFECT_DUAL_SLIDE: return "2-WAY SLIDE";
     default:                     return "STATISCH";
+  }
+}
+
+void setPanelCount(uint8_t newPanelCount, bool saveSetting) {
+  if (newPanelCount < MIN_PANEL_COUNT) newPanelCount = MIN_PANEL_COUNT;
+  if (newPanelCount > MAX_PANEL_COUNT) newPanelCount = MAX_PANEL_COUNT;
+
+  panelCount = newPanelCount;
+  clearDisplay();
+  resetAnimationState();
+
+  Serial.print("Panel layout changed to: ");
+  Serial.println(getPanelLayoutName());
+
+  if (saveSetting) {
+    savePanelSettings();
   }
 }
 

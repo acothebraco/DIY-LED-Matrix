@@ -57,6 +57,7 @@ extern String scrollText;
 extern String logoText;
 
 // Display settings
+extern uint8_t panelCount;
 extern uint8_t matrixBrightness;
 extern uint16_t scrollInterval;
 extern uint8_t scrollTextColorMode;
@@ -86,5 +87,9 @@ const char *getScrollTextEffectName();
 const char *getLogoEffectName();
 const char *getLogoColorName();
 int16_t getTextPixelWidth(const String &text);
+int16_t getMatrixWidth();
+int16_t getMatrixHeight();
+const char *getPanelLayoutName();
 
+void setPanelCount(uint8_t newPanelCount, bool saveSetting = true);
 void setMode(DisplayMode newMode, bool saveSetting = true);

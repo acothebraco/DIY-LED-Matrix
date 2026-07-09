@@ -321,7 +321,7 @@ static void printText(const String &text, int16_t x, int16_t y, uint16_t color) 
 
 // Draw a readable wordmark with the same base font as the scrolling text,
 // but with a subtle shadow/highlight so it looks more like a logo and not like
-// plain thin text. This keeps the m readable on 64x32.
+// plain thin text. This keeps the m readable on 64x32 / 128x32.
 static void drawBrandWordmark(int16_t x, int16_t y, uint8_t revealChars, uint8_t brightnessScale, int8_t shimmerIndex = -1) {
   const String smart = "Smart";
   const String fix = "Fix";
@@ -361,7 +361,7 @@ static void drawBrandWordmark(int16_t x, int16_t y, uint8_t revealChars, uint8_t
     printText(fixVisible, fixX, y, logoMainColor(1, brightnessScale));
   }
 
-  // Small highlight stripe, inspired by the PNG gloss, but minimal for 64x32.
+  // Small highlight stripe, inspired by the PNG gloss, but minimal for 64x32 / 128x32.
   if (revealChars >= full.length() && brightnessScale > 90) {
     display->drawPixel(x + 2, y, logoHighlightColor(0, brightnessScale));
     display->drawPixel(x + 3, y, logoHighlightColor(0, brightnessScale));
@@ -442,7 +442,7 @@ static void drawHeaderSparkles(int16_t x, int16_t y) {
       uint16_t c = logoHighlightColor(i, 180);
       int16_t px = x + pts[i][0];
       int16_t py = y + pts[i][1];
-      if (px >= 0 && px < PANEL_RES_X && py >= 0 && py < PANEL_RES_Y) {
+      if (px >= 0 && px < getMatrixWidth() && py >= 0 && py < PANEL_RES_Y) {
         display->drawPixel(px, py, c);
       }
     }
@@ -519,7 +519,7 @@ static void drawLogoGlitchOverlay(const String &text, int16_t x, int16_t y, bool
   }
 
   int16_t lineY = y + 2 + (phase % 6);
-  display->drawFastHLine(0, lineY, PANEL_RES_X, glitchBlue);
+  display->drawFastHLine(0, lineY, getMatrixWidth(), glitchBlue);
 }
 
 static void drawLogoScanline(int16_t x, int16_t y, int16_t textWidth) {
@@ -528,7 +528,7 @@ static void drawLogoScanline(int16_t x, int16_t y, int16_t textWidth) {
 
   for (int8_t dx = 0; dx < 2; dx++) {
     int16_t px = scanX + dx;
-    if (px >= 0 && px < PANEL_RES_X) {
+    if (px >= 0 && px < getMatrixWidth()) {
       display->drawFastVLine(px, y - 1, 10, scaledColor(255, 255, 255, 170));
     }
   }
@@ -549,7 +549,7 @@ void drawHeader() {
 
   uint8_t revealChars = totalChars;
   uint8_t fadeScale = 255;
-  int16_t baseX = isBrand ? 7 : (PANEL_RES_X - getMatrixTextPixelWidth(text)) / 2;
+  int16_t baseX = isBrand ? (getMatrixWidth() - 50) / 2 : (getMatrixWidth() - getMatrixTextPixelWidth(text)) / 2;
   int16_t baseY = 3;
   int8_t shimmerIndex = -1;
 
@@ -567,7 +567,7 @@ void drawHeader() {
     uint16_t phase = (millis() / logoSpeedStep()) % 170;
     if (phase < 55) {
       int16_t targetX = baseX;
-      baseX = PANEL_RES_X - ((PANEL_RES_X - targetX) * phase / 55);
+      baseX = getMatrixWidth() - ((getMatrixWidth() - targetX) * phase / 55);
     } else if (phase > 125) {
       int16_t targetX = baseX;
       baseX = targetX - ((phase - 125) * (targetX + 56) / 45);
@@ -579,12 +579,12 @@ void drawHeader() {
 
     if (phase < 55) {
       // Slide in from the right.
-      baseX = PANEL_RES_X - ((PANEL_RES_X - targetX) * phase / 55);
+      baseX = getMatrixWidth() - ((getMatrixWidth() - targetX) * phase / 55);
     } else if (phase < 110) {
       baseX = targetX;
     } else if (phase < 165) {
       // Slide out to the right.
-      baseX = targetX + ((phase - 110) * (PANEL_RES_X - targetX + 2) / 55);
+      baseX = targetX + ((phase - 110) * (getMatrixWidth() - targetX + 2) / 55);
     } else {
       // Slide in from the left.
       baseX = -textWidth + (((int32_t)(targetX + textWidth) * (phase - 165)) / 55);

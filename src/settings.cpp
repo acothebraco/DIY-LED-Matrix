@@ -10,6 +10,11 @@ void loadSettings() {
 
   matrixBrightness = prefs.getUChar("bright", DEFAULT_BRIGHTNESS);
 
+  panelCount = prefs.getUChar("panels", MAX_PANEL_COUNT);
+  if (panelCount < MIN_PANEL_COUNT || panelCount > MAX_PANEL_COUNT) {
+    panelCount = MAX_PANEL_COUNT;
+  }
+
   uiLanguage = prefs.getString("uiLang", "de");
   uiLanguage.toLowerCase();
   if (uiLanguage != "de" && uiLanguage != "en") {
@@ -78,6 +83,8 @@ void loadSettings() {
   Serial.println("Settings loaded:");
   Serial.print("Brightness: ");
   Serial.println(matrixBrightness);
+  Serial.print("Panel layout: ");
+  Serial.println(getPanelLayoutName());
   Serial.print("UI Language: ");
   Serial.println(uiLanguage);
   Serial.print("Text Color: ");
@@ -119,6 +126,12 @@ void saveBrightnessSetting() {
   prefs.putUChar("bright", matrixBrightness);
   Serial.print("Brightness saved: ");
   Serial.println(matrixBrightness);
+}
+
+void savePanelSettings() {
+  prefs.putUChar("panels", panelCount);
+  Serial.print("Panel layout saved: ");
+  Serial.println(getPanelLayoutName());
 }
 
 void saveSpeedSetting() {

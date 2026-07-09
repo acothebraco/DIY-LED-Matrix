@@ -3,16 +3,18 @@
 #include <Arduino.h>
 
 // SmartFix Matrix firmware
-#define FIRMWARE_VERSION "1.4.7"
+#define FIRMWARE_VERSION "1.4.8"
 
-// Current hardware: one 64x32 HUB75 panel.
-// Later:
-// - 2 panels side-by-side = 128x32: PANEL_CHAIN 2, PANEL_RES_X 64, PANEL_RES_Y 32
-// - 2 panels stacked = usually special virtual-matrix mapping needed
-// - 2x2 panels = 128x64, usually needs virtual matrix handling
+// Physical HUB75 panel setup.
+// PANEL_CHAIN is the maximum number of 64x32 panels connected side-by-side.
+// The active visible width can be selected in the Web Config: 1 panel = 64x32, 2 panels = 128x32.
 #define PANEL_RES_X 64
 #define PANEL_RES_Y 32
-#define PANEL_CHAIN 1
+#define MIN_PANEL_COUNT 1
+#define MAX_PANEL_COUNT 2
+#define PANEL_CHAIN MAX_PANEL_COUNT
+#define MAX_MATRIX_RES_X (PANEL_RES_X * PANEL_CHAIN)
+#define MATRIX_RES_Y PANEL_RES_Y
 
 // Waveshare ESP32-S3-RGB-Matrix AP
 static const char AP_SSID[] = "SmartFix-Matrix";

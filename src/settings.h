@@ -7,6 +7,7 @@ void loadSettings();
 void saveModeSettings();
 void saveLanguageSetting();
 void saveBrightnessSetting();
+void savePanelSettings();
 void saveSpeedSetting();
 void saveTextColorSetting();
 void saveScrollEffectSetting();

@@ -4,14 +4,14 @@
 #include "matrix_display.h"
 #include "settings.h"
 
-static int16_t scrollX = PANEL_RES_X;
+static int16_t scrollX = 0;
 static unsigned long lastScrollUpdate = 0;
 static unsigned long lastFxUpdate = 0;
 static unsigned long lastFullRedraw = 0;
 static bool scrollDualReturn = false;
 
 void resetAnimationState() {
-  scrollX = PANEL_RES_X;
+  scrollX = getMatrixWidth();
   lastScrollUpdate = 0;
   lastFxUpdate = 0;
   lastFullRedraw = 0;
@@ -59,7 +59,7 @@ static void printScrollCodepoint(uint16_t codepoint, int16_t x, int16_t y, uint1
 
 static void drawScrollSparkles(unsigned long now) {
   for (uint8_t i = 0; i < 5; i++) {
-    int16_t px = (now / 55 + i * 17) % PANEL_RES_X;
+    int16_t px = (now / 55 + i * 17) % getMatrixWidth();
     int16_t py = 15 + ((now / 90 + i * 7) % 15);
     uint16_t color = scrollPaletteColor(i + now / 160, 180);
     display->drawPixel(px, py, color);
@@ -89,7 +89,7 @@ static void drawScrollingText() {
         uint16_t cp = nextUtf8Codepoint(scrollText, byteIndex);
         int16_t glyphWidth = getMatrixCodepointPixelWidth(cp);
 
-        if (cursorX > -12 && cursorX < PANEL_RES_X) {
+        if (cursorX > -12 && cursorX < getMatrixWidth()) {
           int16_t y = 20;
           uint16_t color = getScrollTextColor();
 
@@ -125,8 +125,8 @@ static void drawScrollingText() {
     if (scrollTextEffectMode == SCROLL_EFFECT_DUAL_SLIDE) {
       if (scrollDualReturn) {
         scrollX++;
-        if (scrollX > PANEL_RES_X) {
-          scrollX = PANEL_RES_X;
+        if (scrollX > getMatrixWidth()) {
+          scrollX = getMatrixWidth();
           scrollDualReturn = false;
         }
       } else {
@@ -139,7 +139,7 @@ static void drawScrollingText() {
     } else {
       scrollX--;
       if (scrollX < -textWidth) {
-        scrollX = PANEL_RES_X;
+        scrollX = getMatrixWidth();
       }
     }
   }
@@ -159,14 +159,14 @@ static void drawLogoStatic() {
 
   display->setTextSize(1);
   display->setTextColor(white);
-  display->setCursor(12, 20);
+  display->setCursor((getMatrixWidth() - getTextPixelWidth(String("MATRIX"))) / 2, 20);
   display->print("MATRIX");
 
-  display->drawRect(0, 0, 64, 32, green);
+  display->drawRect(0, 0, getMatrixWidth(), PANEL_RES_Y, green);
   display->drawPixel(1, 1, blue);
-  display->drawPixel(62, 1, blue);
-  display->drawPixel(1, 30, blue);
-  display->drawPixel(62, 30, blue);
+  display->drawPixel(getMatrixWidth() - 2, 1, blue);
+  display->drawPixel(1, PANEL_RES_Y - 2, blue);
+  display->drawPixel(getMatrixWidth() - 2, PANEL_RES_Y - 2, blue);
 }
 
 static void drawPixelArt() {
@@ -188,11 +188,11 @@ static void drawPixelArt() {
   display->setTextWrap(false);
   display->setTextSize(1);
   display->setTextColor(green);
-  display->setCursor(31, 7);
+  display->setCursor(getMatrixWidth() > 64 ? 72 : 31, 7);
   display->print("PIX");
 
   display->setTextColor(blue);
-  display->setCursor(31, 18);
+  display->setCursor(getMatrixWidth() > 64 ? 72 : 31, 18);
   display->print("ART");
 }
 
@@ -206,18 +206,18 @@ static void drawRandomFx() {
     display->setTextWrap(false);
     display->setTextSize(1);
     display->setTextColor(green);
-    display->setCursor(3, 3);
+    display->setCursor(getMatrixWidth() > 64 ? 36 : 3, 3);
     display->print("RANDOM");
 
     display->setTextColor(blue);
-    display->setCursor(18, 14);
+    display->setCursor(getMatrixWidth() > 64 ? 54 : 18, 14);
     display->print("FX");
   }
 
   if (now - lastFxUpdate >= 20) {
     lastFxUpdate = now;
 
-    int x = random(0, PANEL_RES_X);
+    int x = random(0, getMatrixWidth());
     int y = random(0, PANEL_RES_Y);
 
     uint16_t color;

@@ -216,7 +216,7 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
 })();
 
 (function(){
-  function fastAction(href){return /^(\/mode|\/brightness|\/speed|\/text-color|\/scroll-effect|\/logo-effect|\/logo-color|\/auto)(\?|$)/.test(href||'');}
+  function fastAction(href){return /^(\/mode|\/brightness|\/speed|\/text-color|\/scroll-effect|\/logo-effect|\/logo-color|\/panels|\/auto)(\?|$)/.test(href||'');}
   function withAjax(href){return href+(href.indexOf('?')>=0?'&':'?')+'_ajax=1&_t='+(Date.now());}
   function toast(msg){var t=document.getElementById('sfToast');if(!t){return;}t.textContent=msg;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(function(){t.classList.remove('show');},1250);}
   function updatePreviewFromUrl(href){
@@ -226,6 +226,7 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
       else if(u.pathname==='/scroll-effect')p.scrollEffect=u.searchParams.get('e')||p.scrollEffect;
       else if(u.pathname==='/logo-effect')p.logoEffect=u.searchParams.get('e')||p.logoEffect;
       else if(u.pathname==='/logo-color')p.logoColor=u.searchParams.get('c')||p.logoColor;
+      else if(u.pathname==='/panels')p.panelCount=u.searchParams.get('n')||p.panelCount;
       window.sfPreview=p;
     }catch(e){}
   }
@@ -278,6 +279,17 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
     'u':[60,64,64,32,124],'v':[28,32,64,32,28],'w':[60,64,48,64,60],'x':[68,40,16,40,68],'y':[12,80,80,80,60],'z':[68,100,84,76,68]
   };
   function state(){return window.sfPreview||{};}
+  function syncLayout(cv){
+    var p=state(), panels=parseInt(p.panelCount||1);
+    if(!isFinite(panels)||panels<1)panels=1;
+    if(panels>2)panels=2;
+    var nextW=64*panels, nextS=panels>1?5:10;
+    if(nextW!==W||nextS!==S){
+      W=nextW; S=nextS; off.width=W; off.height=H; oc=off.getContext('2d'); oc.imageSmoothingEnabled=false; baseReady=false; spriteCache={};
+    }
+    var cw=W*S, ch=H*S;
+    if(cv&&(cv.width!==cw||cv.height!==ch)){cv.width=cw;cv.height=ch;baseReady=false;}
+  }
   function glyphs(t){return Array.from(t||'');}
   function prefix(t,n){return glyphs(t).slice(0,Math.max(0,n)).join('');}
   function isSmartFixBrand(t){return String(t||'').toLowerCase().replace(/[\s\-_]/g,'')==='smartfix';}
@@ -329,11 +341,11 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   function sparkles(ctx,x,y,now){var pts=[[0,0],[8,1],[15,-1],[25,0],[35,-1],[46,1],[52,0],[4,9],[12,10],[29,9],[39,10],[48,9],[57,10]],f=Math.floor(now/95)%16;pts.forEach(function(pt,i){if(((i+f)%5)===0)px(ctx,x+pt[0],y+pt[1],logoHighlight(i,180));});}
   function drawLogo(ctx,now){
     var p=state(),t=(p.logoText||'SmartFix').trim()||'SmartFix',brandMode=isSmartFixBrand(t),total=brandMode?8:glyphs(t).length;
-    var baseX=brandMode?7:Math.max(0,Math.round((64-tw(t))/2)),baseY=3,reveal=total,scale=255,shimmer=-1,effect=parseInt(p.logoEffect||0);
+    var baseX=brandMode?Math.max(0,Math.round((W-50)/2)):Math.max(0,Math.round((W-tw(t))/2)),baseY=3,reveal=total,scale=255,shimmer=-1,effect=parseInt(p.logoEffect||0);
     if(effect===1){var ph=Math.floor(now/logoStep(5))%(total+8);reveal=Math.min(ph,total);} 
     else if(effect===2){var ph2=Math.floor(now/logoStep())%512;if(ph2>255)ph2=511-ph2;scale=50+Math.round(ph2*205/255);} 
-    else if(effect===3){var ph3=Math.floor(now/logoStep())%170,target=baseX;if(ph3<55)baseX=64-((64-target)*ph3/55);else if(ph3>125)baseX=target-((ph3-125)*(target+56)/45);} 
-    else if(effect===11){var ph11=Math.floor(now/logoStep())%220,target11=baseX,w=brandMode?50:tw(t);if(ph11<55)baseX=64-((64-target11)*ph11/55);else if(ph11<110)baseX=target11;else if(ph11<165)baseX=target11+((ph11-110)*(64-target11+2)/55);else baseX=-w+(((target11+w)*(ph11-165))/55);} 
+    else if(effect===3){var ph3=Math.floor(now/logoStep())%170,target=baseX;if(ph3<55)baseX=W-((W-target)*ph3/55);else if(ph3>125)baseX=target-((ph3-125)*(target+56)/45);} 
+    else if(effect===11){var ph11=Math.floor(now/logoStep())%220,target11=baseX,w=brandMode?50:tw(t);if(ph11<55)baseX=W-((W-target11)*ph11/55);else if(ph11<110)baseX=target11;else if(ph11<165)baseX=target11+((ph11-110)*(W-target11+2)/55);else baseX=-w+(((target11+w)*(ph11-165))/55);} 
     else if(effect===4){var sh=Math.floor(now/logoStep(3))%(total+4);if(sh<total)shimmer=sh;} 
     else if(effect===6){var ph6=Math.floor(now/logoStep())%512;if(ph6>255)ph6=511-ph6;scale=150+Math.round(ph6*105/255);} 
     if(effect===7)waveLogo(ctx,brandMode?'SmartFix':t,baseX,baseY,brandMode,scale,false,now);
@@ -344,7 +356,7 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
     else if(effect===9){txt(ctx,brandMode?'SmartFix':t,baseX+((Math.floor(now/90)%3)-1),baseY,rgba(colors[4],170));txt(ctx,brandMode?'SmartFix':t,baseX-((Math.floor(now/110)%3)-1),baseY+1,rgba(colors[2],170));}
     else if(effect===10){var w2=brandMode?50:tw(t),phs=Math.floor(now/logoStep())%(w2+18),sx=baseX-8+phs;lineV(ctx,sx,baseY-1,10,rgba(colors[0],170));lineV(ctx,sx+1,baseY-1,10,rgba(colors[0],170));}
   }
-  function scrollX(now,w,speed,dual){if(dual){var dist=64+w,pos=(now/speed)%(dist*2);return pos<dist?64-pos:-w+(pos-dist);}return 64-((now/speed)%(w+72));}
+  function scrollX(now,w,speed,dual){if(dual){var dist=W+w,pos=(now/speed)%(dist*2);return pos<dist?W-pos:-w+(pos-dist);}return W-((now/speed)%(w+W+8));}
   function drawScroll(ctx,now){
     var p=state(),t=p.scrollText||'SmartFix Matrix',effect=parseInt(p.scrollEffect||0),speed=Math.max(8,parseInt(p.speed||35)),x=scrollX(now,tw(t),speed,effect===6),y=20,color=colorByIndex(parseInt(p.scrollColor||0));
     if(effect===1){var chars=glyphs(t),cx=x;for(var i=0;i<chars.length;i++){txt(ctx,chars[i],cx,y,wordColors[(i+Math.floor(now/180))%wordColors.length]);cx+=(chars[i]==='ß'?12:6);}return;}
@@ -394,6 +406,7 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
     var cv=document.getElementById('matrixPreview');if(!cv){requestAnimationFrame(frame);return;}
     if(document.hidden||window.sfPreviewPaused){requestAnimationFrame(frame);return;}
     if(ts-lastFrame<FRAME_MS){requestAnimationFrame(frame);return;}
+    syncLayout(cv);
     lastFrame=ts;
     var p=state(),si=document.getElementById('scrollTextInput'),li=document.getElementById('logoTextInput');if(si)p.scrollText=si.value;if(li)p.logoText=li.value;
     oc.setTransform(1,0,0,1,0,0);oc.clearRect(0,0,W,H);oc.fillStyle='#000';oc.fillRect(0,0,W,H);
@@ -410,7 +423,8 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += "scrollEffect:" + String(scrollTextEffectMode) + ",";
   page += "logoEffect:" + String(logoEffectMode) + ",";
   page += "logoColor:" + String(logoColorMode) + ",";
-  page += "speed:" + String(scrollInterval);
+  page += "speed:" + String(scrollInterval) + ",";
+  page += "panelCount:" + String(panelCount);
   page += "};</script>";
   page += "</head><body><div class='wrap'>";
 
@@ -425,6 +439,7 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
 
   page += "<div class='status'>";
   page += "<div class='pill good'><div class='label'>Firmware</div><div class='value'>v" + String(FIRMWARE_VERSION) + "</div></div>";
+  page += "<div class='pill blue'><div class='label'>" + L("Display", "Display") + "</div><div class='value'>" + String(getPanelLayoutName()) + "</div></div>";
   page += "<div class='pill blue'><div class='label'>" + L("Modus", "Mode") + "</div><div class='value'>" + String(getModeName(currentMode)) + "</div></div>";
   page += "<div class='pill'><div class='label'>" + L("Auto Demo", "Auto demo") + "</div><div class='value'>" + autoStatus + "</div></div>";
   page += "<div class='pill'><div class='label'>" + L("Helligkeit", "Brightness") + "</div><div class='value'>" + String(matrixBrightness) + " / 255</div></div>";
@@ -443,8 +458,8 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += "</div></div>";
 
   page += "<details class='card config-section' id='section-preview' open>";
-  page += "<summary><span class='section-icon'>&#128161;</span><span class='summary-text'>" + L("LED Matrix Vorschau", "LED matrix preview") + "</span><span class='sumvalue'>64x32</span><span class='chev'>+</span></summary><div class='detail-body'>";
-  page += "<div class='preview-shell'><canvas id='matrixPreview' width='640' height='320'></canvas></div>";
+  page += "<summary><span class='section-icon'>&#128161;</span><span class='summary-text'>" + L("LED Matrix Vorschau", "LED matrix preview") + "</span><span class='sumvalue'>" + String(getPanelLayoutName()) + "</span><span class='chev'>+</span></summary><div class='detail-body'>";
+  page += "<div class='preview-shell'><canvas id='matrixPreview' width='" + String(getMatrixWidth() * (panelCount > 1 ? 5 : 10)) + "' height='320'></canvas></div>";
   page += "<div class='preview-row'><div class='sub'><span class='preview-dot'></span>" + L("Animierte Vorschau mit realistischen LED-Punkten. Logo-Text, Farben und Lauftext werden live mit den aktuellen Effekten simuliert.", "Animated preview with realistic LED dots. Logo text, colors and scrolling text are simulated live with the current effects.") + "</div></div>";
   page += "</div></details>";
 
@@ -538,6 +553,16 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += htmlButton("100%", "/brightness?v=200");
   page += "</div></div></details>";
 
+  page += "<details class='card config-section' id='section-display'>";
+  page += "<summary><span class='section-icon'>&#128250;</span><span class='summary-text'>" + L("Display Layout", "Display layout") + "</span><span class='sumvalue'>" + String(getPanelLayoutName()) + "</span><span class='chev'>+</span></summary><div class='detail-body'>";
+  page += "<h2>" + L("64x32 Panels", "64x32 panels") + "</h2>";
+  page += "<div class='buttons'>";
+  page += htmlButton("1 Panel - 64x32", "/panels?n=1");
+  page += htmlButton("2 Panels - 128x32", "/panels?n=2");
+  page += "</div>";
+  page += "<div class='hint'>" + L("Die Firmware ist f&uuml;r maximal 2 nebeneinander angeschlossene 64x32 Panels initialisiert. Die Auswahl bestimmt, wie breit Logo, Lauftext, Effekte und Vorschau gerendert werden.", "The firmware is initialized for up to 2 side-by-side 64x32 panels. This setting controls the rendered width for logo, scrolling text, effects and preview.") + "</div>";
+  page += "</div></details>";
+
   page += "<details class='card config-section' id='wifi'>";
   page += "<summary><span class='section-icon'>&#128246;</span><span class='summary-text'>" + L("Heim WLAN", "Home WiFi") + "</span><span class='sumvalue'>" + getWiFiStatusText() + "</span><span class='chev'>+</span></summary><div class='detail-body'>";
   page += "<form action='/wifi-save' method='POST'>";
@@ -575,7 +600,7 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += htmlButton("Refresh", "/");
   page += "</div></div></details>";
 
-  page += "<div class='small'>" + L("SmartFix Elektronikservice &bull; Entwickelt f&uuml;r 64x32 HUB75 RGB Matrix", "SmartFix electronics service &bull; Designed for 64x32 HUB75 RGB Matrix") + "</div>";
+  page += "<div class='small'>" + L("SmartFix Elektronikservice &bull; Entwickelt f&uuml;r ", "SmartFix electronics service &bull; Designed for ") + String(getPanelLayoutName()) + " HUB75 RGB Matrix</div>";
   page += "</div></body></html>";
   return page;
 }
@@ -711,6 +736,21 @@ static void handleLogoColor() {
 
     Serial.print("Logo color changed to: ");
     Serial.println(getLogoColorName());
+  }
+
+  redirectHome();
+}
+
+static void handlePanelCount() {
+  if (server.hasArg("n")) {
+    int value = server.arg("n").toInt();
+    if (value < MIN_PANEL_COUNT) value = MIN_PANEL_COUNT;
+    if (value > MAX_PANEL_COUNT) value = MAX_PANEL_COUNT;
+
+    setPanelCount((uint8_t)value, true);
+
+    Serial.print("Panel count changed from web: ");
+    Serial.println(panelCount);
   }
 
   redirectHome();
@@ -1027,6 +1067,7 @@ void setupWebServer() {
   server.on("/scroll-effect", HTTP_GET, handleScrollEffect);
   server.on("/logo-effect", HTTP_GET, handleLogoEffect);
   server.on("/logo-color", HTTP_GET, handleLogoColor);
+  server.on("/panels", HTTP_GET, handlePanelCount);
   server.on("/set-text", HTTP_GET, handleSetText);
   server.on("/set-logo-text", HTTP_GET, handleSetLogoText);
   server.on("/wifi-scan", HTTP_GET, handleWifiScan);

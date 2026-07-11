@@ -51,6 +51,26 @@ void loadSettings() {
     logoInterval = DEFAULT_LOGO_INTERVAL;
   }
 
+  scrollFontSize = prefs.getUChar("scrollFontSz", 1);
+  if (scrollFontSize < 1 || scrollFontSize > 2) {
+    scrollFontSize = 1;
+  }
+
+  logoFontSize = prefs.getUChar("logoFontSz", 1);
+  if (logoFontSize < 1 || logoFontSize > 2) {
+    logoFontSize = 1;
+  }
+
+  scrollFontStyle = prefs.getUChar("scrollFont", FONT_STYLE_CLASSIC);
+  if (scrollFontStyle > FONT_STYLE_BLOCK) {
+    scrollFontStyle = FONT_STYLE_CLASSIC;
+  }
+
+  logoFontStyle = prefs.getUChar("logoFont", FONT_STYLE_CLASSIC);
+  if (logoFontStyle > FONT_STYLE_BLOCK) {
+    logoFontStyle = FONT_STYLE_CLASSIC;
+  }
+
   scrollText = prefs.getString("text", scrollText);
   if (scrollText.length() == 0) {
     scrollText = "ELEKTRONIKSERVICE  -  REPARATUR  -  KONSOLEN  -  SMARTFIX  ";
@@ -106,6 +126,14 @@ void loadSettings() {
   Serial.print("Logo Speed: ");
   Serial.print(logoInterval);
   Serial.println(" ms");
+  Serial.print("Scroll Font: ");
+  Serial.print(getScrollFontSizeName());
+  Serial.print(" / ");
+  Serial.println(getScrollFontStyleName());
+  Serial.print("Logo Font: ");
+  Serial.print(getLogoFontSizeName());
+  Serial.print(" / ");
+  Serial.println(getLogoFontStyleName());
   Serial.print("Scroll Text: ");
   Serial.println(scrollText);
   Serial.print("Logo Text: ");
@@ -154,6 +182,24 @@ void saveLogoSpeedSetting() {
   Serial.print("Logo speed saved: ");
   Serial.print(logoInterval);
   Serial.println(" ms");
+}
+
+void saveScrollFontSetting() {
+  prefs.putUChar("scrollFontSz", scrollFontSize);
+  prefs.putUChar("scrollFont", scrollFontStyle);
+  Serial.print("Scroll font saved: ");
+  Serial.print(getScrollFontSizeName());
+  Serial.print(" / ");
+  Serial.println(getScrollFontStyleName());
+}
+
+void saveLogoFontSetting() {
+  prefs.putUChar("logoFontSz", logoFontSize);
+  prefs.putUChar("logoFont", logoFontStyle);
+  Serial.print("Logo font saved: ");
+  Serial.print(getLogoFontSizeName());
+  Serial.print(" / ");
+  Serial.println(getLogoFontStyleName());
 }
 
 void saveTextColorSetting() {

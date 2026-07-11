@@ -36,6 +36,14 @@ enum LogoColorMode {
   LOGO_COLOR_RAINBOW    = 7   // green/blue/yellow/red/white by word
 };
 
+
+enum MatrixFontStyleMode {
+  FONT_STYLE_CLASSIC = 0,
+  FONT_STYLE_BOLD    = 1,
+  FONT_STYLE_WIDE    = 2,
+  FONT_STYLE_BLOCK   = 3
+};
+
 enum ScrollTextEffectMode {
   SCROLL_EFFECT_NORMAL  = 0,
   SCROLL_EFFECT_RAINBOW = 1,
@@ -61,6 +69,10 @@ extern uint8_t panelCount;
 extern uint8_t matrixBrightness;
 extern uint16_t scrollInterval;
 extern uint16_t logoInterval;
+extern uint8_t scrollFontSize;
+extern uint8_t logoFontSize;
+extern uint8_t scrollFontStyle;
+extern uint8_t logoFontStyle;
 extern uint8_t scrollTextColorMode;
 extern uint8_t scrollTextEffectMode;
 extern uint8_t logoEffectMode;
@@ -84,6 +96,10 @@ extern bool firmwareUpdateAvailable;
 const char *getModeName(DisplayMode mode);
 const char *getSpeedName();
 const char *getLogoSpeedName();
+const char *getScrollFontSizeName();
+const char *getLogoFontSizeName();
+const char *getScrollFontStyleName();
+const char *getLogoFontStyleName();
 const char *getScrollTextColorName();
 const char *getScrollTextEffectName();
 const char *getLogoEffectName();

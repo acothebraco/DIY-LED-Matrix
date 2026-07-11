@@ -10,6 +10,8 @@ void saveBrightnessSetting();
 void savePanelSettings();
 void saveSpeedSetting();
 void saveLogoSpeedSetting();
+void saveScrollFontSetting();
+void saveLogoFontSetting();
 void saveTextColorSetting();
 void saveScrollEffectSetting();
 void saveLogoEffectSetting();

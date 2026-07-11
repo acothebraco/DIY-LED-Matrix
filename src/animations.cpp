@@ -54,7 +54,23 @@ static int8_t scrollWaveOffset(uint16_t phase, int8_t amplitude) {
 }
 
 static void printScrollCodepoint(uint16_t codepoint, int16_t x, int16_t y, uint16_t color) {
-  drawMatrixCodepoint(codepoint, x, y, color);
+  drawMatrixCodepointStyled(codepoint, x, y, color, scrollFontSize, scrollFontStyle);
+}
+
+static int16_t getScrollTextWidth(const String &text) {
+  return getMatrixTextPixelWidthStyled(text, scrollFontSize, scrollFontStyle);
+}
+
+static int16_t getScrollCharWidth(uint16_t cp) {
+  return getMatrixCodepointPixelWidthStyled(cp, scrollFontSize, scrollFontStyle);
+}
+
+static int16_t getScrollBaseY() {
+  return scrollFontSize >= 2 ? 17 : 20;
+}
+
+static int8_t getScrollWaveAmplitude() {
+  return scrollFontSize >= 2 ? 1 : 2;
 }
 
 static void drawScrollSparkles(unsigned long now) {
@@ -79,7 +95,7 @@ static void drawScrollingText() {
     display->setTextSize(1);
 
     if (scrollTextEffectMode == SCROLL_EFFECT_NORMAL || scrollTextEffectMode == SCROLL_EFFECT_DUAL_SLIDE) {
-      drawMatrixText(scrollText, scrollX, 20, getScrollTextColor());
+      drawMatrixTextStyled(scrollText, scrollX, getScrollBaseY(), getScrollTextColor(), scrollFontSize, scrollFontStyle);
     } else {
       int16_t cursorX = scrollX;
       uint16_t byteIndex = 0;
@@ -87,16 +103,16 @@ static void drawScrollingText() {
 
       while (byteIndex < scrollText.length()) {
         uint16_t cp = nextUtf8Codepoint(scrollText, byteIndex);
-        int16_t glyphWidth = getMatrixCodepointPixelWidth(cp);
+        int16_t glyphWidth = getScrollCharWidth(cp);
 
         if (cursorX > -12 && cursorX < getMatrixWidth()) {
-          int16_t y = 20;
+          int16_t y = getScrollBaseY();
           uint16_t color = getScrollTextColor();
 
           if (scrollTextEffectMode == SCROLL_EFFECT_RAINBOW) {
             color = scrollPaletteColor(glyphIndex + now / 120);
           } else if (scrollTextEffectMode == SCROLL_EFFECT_WAVE) {
-            y += scrollWaveOffset(now / 70 + glyphIndex * 3, 2);
+            y += scrollWaveOffset(now / 70 + glyphIndex * 3, getScrollWaveAmplitude());
           } else if (scrollTextEffectMode == SCROLL_EFFECT_SPARKLE) {
             color = (((glyphIndex + now / 90) % 9) == 0) ? white : getScrollTextColor();
           } else if (scrollTextEffectMode == SCROLL_EFFECT_COMET) {
@@ -120,7 +136,7 @@ static void drawScrollingText() {
       }
     }
 
-    int16_t textWidth = getTextPixelWidth(scrollText);
+    int16_t textWidth = getScrollTextWidth(scrollText);
 
     if (scrollTextEffectMode == SCROLL_EFFECT_DUAL_SLIDE) {
       if (scrollDualReturn) {

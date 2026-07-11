@@ -108,29 +108,61 @@ static char umlautBaseChar(uint16_t cp) {
   }
 }
 
-int16_t getMatrixCodepointPixelWidth(uint16_t codepoint) {
-  if (codepoint == 0x00DF) { // ß -> ss
-    return 12;
+static uint8_t safeFontSize(uint8_t size) {
+  if (size < 1) return 1;
+  if (size > 2) return 2;
+  return size;
+}
+
+static uint8_t safeFontStyle(uint8_t style) {
+  if (style > FONT_STYLE_BLOCK) return FONT_STYLE_CLASSIC;
+  return style;
+}
+
+static int16_t fontStyleExtra(uint8_t size, uint8_t style) {
+  size = safeFontSize(size);
+  style = safeFontStyle(style);
+
+  switch (style) {
+    case FONT_STYLE_BOLD:  return 1;
+    case FONT_STYLE_WIDE:  return size;
+    case FONT_STYLE_BLOCK: return 1;
+    case FONT_STYLE_CLASSIC:
+    default:               return 0;
   }
-  return 6;
+}
+
+int16_t getMatrixCodepointPixelWidth(uint16_t codepoint) {
+  return getMatrixCodepointPixelWidthStyled(codepoint, 1, FONT_STYLE_CLASSIC);
+}
+
+int16_t getMatrixCodepointPixelWidthStyled(uint16_t codepoint, uint8_t size, uint8_t style) {
+  size = safeFontSize(size);
+  int16_t baseWidth = (codepoint == 0x00DF) ? 12 : 6; // ß -> ss
+  return baseWidth * size + fontStyleExtra(size, style);
 }
 
 int16_t getMatrixTextPixelWidth(const String &text) {
+  return getMatrixTextPixelWidthStyled(text, 1, FONT_STYLE_CLASSIC);
+}
+
+int16_t getMatrixTextPixelWidthStyled(const String &text, uint8_t size, uint8_t style) {
   int16_t width = 0;
   uint16_t i = 0;
 
   while (i < text.length()) {
     uint16_t cp = nextUtf8Codepoint(text, i);
     if (cp == 0) break;
-    width += getMatrixCodepointPixelWidth(cp);
+    width += getMatrixCodepointPixelWidthStyled(cp, size, style);
   }
 
   return width;
 }
 
-void drawMatrixCodepoint(uint16_t codepoint, int16_t x, int16_t y, uint16_t color) {
+static void drawMatrixCodepointBase(uint16_t codepoint, int16_t x, int16_t y, uint16_t color, uint8_t size) {
+  size = safeFontSize(size);
   display->setTextWrap(false);
-  display->setTextSize(1);
+  display->setTextSize(size);
   display->setTextColor(color);
 
   if (isUmlautCodepoint(codepoint)) {
@@ -138,39 +170,72 @@ void drawMatrixCodepoint(uint16_t codepoint, int16_t x, int16_t y, uint16_t colo
     display->setCursor(x, y);
     display->print(base);
 
-    int16_t dotY = y - 2;
+    int16_t dotY = y - (2 * size);
     if (dotY < 0) dotY = y;
 
-    display->drawPixel(x + 1, dotY, color);
-    display->drawPixel(x + 3, dotY, color);
-    return;
-  }
-
-  if (codepoint == 0x00DF) { // ß
-    display->setCursor(x, y);
-    display->print("ss");
-    return;
-  }
-
-  if (codepoint >= 32 && codepoint <= 126) {
-    display->setCursor(x, y);
-    display->print((char)codepoint);
+    display->drawPixel(x + (1 * size), dotY, color);
+    display->drawPixel(x + (3 * size), dotY, color);
+    if (size > 1) {
+      display->drawPixel(x + (1 * size) + 1, dotY, color);
+      display->drawPixel(x + (3 * size) + 1, dotY, color);
+    }
     return;
   }
 
   display->setCursor(x, y);
-  display->print('?');
+
+  if (codepoint == 0x00DF) { // ß
+    display->print("ss");
+  } else if (codepoint >= 32 && codepoint <= 126) {
+    display->print((char)codepoint);
+  } else {
+    display->print('?');
+  }
+}
+
+void drawMatrixCodepoint(uint16_t codepoint, int16_t x, int16_t y, uint16_t color) {
+  drawMatrixCodepointStyled(codepoint, x, y, color, 1, FONT_STYLE_CLASSIC);
+}
+
+void drawMatrixCodepointStyled(uint16_t codepoint, int16_t x, int16_t y, uint16_t color, uint8_t size, uint8_t style) {
+  size = safeFontSize(size);
+  style = safeFontStyle(style);
+
+  if (style == FONT_STYLE_BOLD) {
+    drawMatrixCodepointBase(codepoint, x, y, color, size);
+    drawMatrixCodepointBase(codepoint, x + 1, y, color, size);
+    return;
+  }
+
+  if (style == FONT_STYLE_WIDE) {
+    drawMatrixCodepointBase(codepoint, x, y, color, size);
+    drawMatrixCodepointBase(codepoint, x + size, y, color, size);
+    return;
+  }
+
+  if (style == FONT_STYLE_BLOCK) {
+    drawMatrixCodepointBase(codepoint, x, y, color, size);
+    drawMatrixCodepointBase(codepoint, x + 1, y, color, size);
+    drawMatrixCodepointBase(codepoint, x, y + 1, color, size);
+    return;
+  }
+
+  drawMatrixCodepointBase(codepoint, x, y, color, size);
 }
 
 void drawMatrixText(const String &text, int16_t x, int16_t y, uint16_t color) {
+  drawMatrixTextStyled(text, x, y, color, 1, FONT_STYLE_CLASSIC);
+}
+
+void drawMatrixTextStyled(const String &text, int16_t x, int16_t y, uint16_t color, uint8_t size, uint8_t style) {
   int16_t cursorX = x;
   uint16_t i = 0;
 
   while (i < text.length()) {
     uint16_t cp = nextUtf8Codepoint(text, i);
     if (cp == 0) break;
-    drawMatrixCodepoint(cp, cursorX, y, color);
-    cursorX += getMatrixCodepointPixelWidth(cp);
+    drawMatrixCodepointStyled(cp, cursorX, y, color, size, style);
+    cursorX += getMatrixCodepointPixelWidthStyled(cp, size, style);
   }
 }
 
@@ -316,7 +381,19 @@ static uint16_t logoHighlightColor(uint8_t partIndex, uint8_t scale = 255) {
 }
 
 static void printText(const String &text, int16_t x, int16_t y, uint16_t color) {
-  drawMatrixText(text, x, y, color);
+  drawMatrixTextStyled(text, x, y, color, logoFontSize, logoFontStyle);
+}
+
+static int16_t getLogoTextWidth(const String &text) {
+  return getMatrixTextPixelWidthStyled(text, logoFontSize, logoFontStyle);
+}
+
+static int16_t getLogoCharWidth(uint16_t cp) {
+  return getMatrixCodepointPixelWidthStyled(cp, logoFontSize, logoFontStyle);
+}
+
+static int16_t getLogoBaseY() {
+  return logoFontSize >= 2 ? 1 : 3;
 }
 
 // Draw a readable wordmark with the same base font as the scrolling text,
@@ -343,7 +420,9 @@ static void drawBrandWordmark(int16_t x, int16_t y, uint8_t revealChars, uint8_t
   String smartVisible = smart.substring(0, smartReveal);
   String fixVisible = fix.substring(0, fixReveal);
 
-  int16_t fixX = x + 32;  // 5 chars * 6 px + small 2 px brand gap
+  int16_t smartWidth = getLogoTextWidth(smart);
+  int16_t brandGap = logoFontSize >= 2 ? 3 : 2;
+  int16_t fixX = x + smartWidth + brandGap;
 
   // Soft logo-like depth. Only dim, so it does not destroy the m.
   if (smartVisible.length() > 0) {
@@ -363,20 +442,20 @@ static void drawBrandWordmark(int16_t x, int16_t y, uint8_t revealChars, uint8_t
 
   // Small highlight stripe, inspired by the PNG gloss, but minimal for 64x32 / 128x32.
   if (revealChars >= full.length() && brightnessScale > 90) {
-    display->drawPixel(x + 2, y, logoHighlightColor(0, brightnessScale));
-    display->drawPixel(x + 3, y, logoHighlightColor(0, brightnessScale));
-    display->drawPixel(fixX + 1, y, logoHighlightColor(1, brightnessScale));
-    display->drawPixel(fixX + 2, y, logoHighlightColor(1, brightnessScale));
+    display->drawPixel(x + logoFontSize + 1, y, logoHighlightColor(0, brightnessScale));
+    display->drawPixel(x + logoFontSize + 2, y, logoHighlightColor(0, brightnessScale));
+    display->drawPixel(fixX + logoFontSize, y, logoHighlightColor(1, brightnessScale));
+    display->drawPixel(fixX + logoFontSize + 1, y, logoHighlightColor(1, brightnessScale));
   }
 
   // Shimmer effect: one bright moving character.
   if (shimmerIndex >= 0 && shimmerIndex < (int)full.length() && revealChars >= full.length()) {
     if (shimmerIndex < 5) {
       String c = String(full[shimmerIndex]);
-      printText(c, x + shimmerIndex * 6, y, logoHighlightColor(0, brightnessScale));
+      printText(c, x + getLogoTextWidth(full.substring(0, shimmerIndex)), y, logoHighlightColor(0, brightnessScale));
     } else {
       String c = String(full[shimmerIndex]);
-      printText(c, fixX + (shimmerIndex - 5) * 6, y, logoHighlightColor(1, brightnessScale));
+      printText(c, fixX + getLogoTextWidth(fix.substring(0, shimmerIndex - 5)), y, logoHighlightColor(1, brightnessScale));
     }
   }
 }
@@ -407,7 +486,7 @@ static void drawGenericLogoText(const String &text, int16_t x, int16_t y, uint8_
     if (word.length() > 0) {
       printText(word, cursorX + 1, y + 1, logoShadowColor(wordIndex, brightnessScale));
       printText(word, cursorX, y, logoMainColor(wordIndex, brightnessScale));
-      cursorX += getMatrixTextPixelWidth(word);
+      cursorX += getLogoTextWidth(word);
       wordIndex++;
       word = "";
     }
@@ -415,14 +494,14 @@ static void drawGenericLogoText(const String &text, int16_t x, int16_t y, uint8_
     if (i < visible.length()) {
       String sep = String(c);
       printText(sep, cursorX, y, logoMainColor(wordIndex, brightnessScale));
-      cursorX += getMatrixTextPixelWidth(sep);
+      cursorX += getLogoTextWidth(sep);
     }
   }
 
   if (shimmerIndex >= 0 && shimmerIndex < (int)visible.length()) {
     char c = visible[shimmerIndex];
     if (c != ' ') {
-      printText(String(c), x + shimmerIndex * 6, y, scaledColor(255, 255, 255, brightnessScale));
+      printText(String(c), x + getLogoTextWidth(visible.substring(0, shimmerIndex)), y, scaledColor(255, 255, 255, brightnessScale));
     }
   }
 }
@@ -469,7 +548,7 @@ static void drawLogoWaveText(const String &text, int16_t x, int16_t y, bool isBr
     uint16_t cp = nextUtf8Codepoint(text, byteIndex);
 
     if (cp == ' ') {
-      cursorX += 6;
+      cursorX += getLogoTextWidth(String(" "));
       wordIndex++;
       glyphIndex++;
       continue;
@@ -482,13 +561,13 @@ static void drawLogoWaveText(const String &text, int16_t x, int16_t y, bool isBr
       yOffset = triangleWaveOffset(t + glyphIndex * 3, 2);
     }
 
-    drawMatrixCodepoint(cp, cursorX + 1, y + 1 + yOffset, logoShadowColor(partIndex, brightnessScale));
-    drawMatrixCodepoint(cp, cursorX, y + yOffset, logoMainColor(partIndex, brightnessScale));
+    drawMatrixCodepointStyled(cp, cursorX + 1, y + 1 + yOffset, logoShadowColor(partIndex, brightnessScale), logoFontSize, logoFontStyle);
+    drawMatrixCodepointStyled(cp, cursorX, y + yOffset, logoMainColor(partIndex, brightnessScale), logoFontSize, logoFontStyle);
 
-    cursorX += getMatrixCodepointPixelWidth(cp);
+    cursorX += getLogoCharWidth(cp);
 
     if (isBrand && glyphIndex == 4) {
-      cursorX += 2;
+      cursorX += (logoFontSize >= 2 ? 3 : 2);
     }
 
     if (!isBrand && (cp == '-' || cp == '_')) {
@@ -529,7 +608,7 @@ static void drawLogoScanline(int16_t x, int16_t y, int16_t textWidth) {
   for (int8_t dx = 0; dx < 2; dx++) {
     int16_t px = scanX + dx;
     if (px >= 0 && px < getMatrixWidth()) {
-      display->drawFastVLine(px, y - 1, 10, scaledColor(255, 255, 255, 170));
+      display->drawFastVLine(px, y - 1, (7 * logoFontSize) + 3, scaledColor(255, 255, 255, 170));
     }
   }
 }
@@ -549,8 +628,10 @@ void drawHeader() {
 
   uint8_t revealChars = totalChars;
   uint8_t fadeScale = 255;
-  int16_t baseX = isBrand ? (getMatrixWidth() - 50) / 2 : (getMatrixWidth() - getMatrixTextPixelWidth(text)) / 2;
-  int16_t baseY = 3;
+  int16_t brandWidth = getLogoTextWidth(String("Smart")) + (logoFontSize >= 2 ? 3 : 2) + getLogoTextWidth(String("Fix"));
+  int16_t logoWidth = isBrand ? brandWidth : getLogoTextWidth(text);
+  int16_t baseX = (getMatrixWidth() - logoWidth) / 2;
+  int16_t baseY = getLogoBaseY();
   int8_t shimmerIndex = -1;
 
   if (baseX < 0) baseX = 0;
@@ -570,12 +651,12 @@ void drawHeader() {
       baseX = getMatrixWidth() - ((getMatrixWidth() - targetX) * phase / 55);
     } else if (phase > 125) {
       int16_t targetX = baseX;
-      baseX = targetX - ((phase - 125) * (targetX + 56) / 45);
+      baseX = targetX - ((phase - 125) * (targetX + logoWidth + 6) / 45);
     }
   } else if (logoEffectMode == LOGO_EFFECT_DUAL_SLIDE) {
     uint16_t phase = (millis() / logoSpeedStep()) % 220;
     int16_t targetX = baseX;
-    int16_t textWidth = isBrand ? 50 : getMatrixTextPixelWidth(text);
+    int16_t textWidth = logoWidth;
 
     if (phase < 55) {
       // Slide in from the right.
@@ -617,7 +698,7 @@ void drawHeader() {
   } else if (logoEffectMode == LOGO_EFFECT_GLITCH) {
     drawLogoGlitchOverlay(isBrand ? String("SmartFix") : text, baseX, baseY, isBrand);
   } else if (logoEffectMode == LOGO_EFFECT_SCANLINE) {
-    drawLogoScanline(baseX, baseY, isBrand ? 50 : getMatrixTextPixelWidth(text));
+    drawLogoScanline(baseX, baseY, logoWidth);
   }
 
   // Blue separator line intentionally removed.

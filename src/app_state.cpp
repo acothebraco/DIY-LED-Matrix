@@ -16,6 +16,10 @@ uint8_t panelCount = MAX_PANEL_COUNT;
 uint8_t matrixBrightness = DEFAULT_BRIGHTNESS;
 uint16_t scrollInterval = DEFAULT_SCROLL_INTERVAL;
 uint16_t logoInterval = DEFAULT_LOGO_INTERVAL;
+uint8_t scrollFontSize = 1;
+uint8_t logoFontSize = 1;
+uint8_t scrollFontStyle = FONT_STYLE_CLASSIC;
+uint8_t logoFontStyle = FONT_STYLE_CLASSIC;
 uint8_t scrollTextColorMode = 0; // 0=White, 1=Green, 2=Blue, 3=Yellow, 4=Red
 uint8_t scrollTextEffectMode = SCROLL_EFFECT_NORMAL;
 uint8_t logoEffectMode = LOGO_EFFECT_STATIC;
@@ -89,6 +93,36 @@ const char *getLogoSpeedName() {
     return "SCHNELL";
   }
   return "MITTEL";
+}
+
+static const char *fontSizeName(uint8_t size) {
+  return size >= 2 ? "GROSS" : "KLEIN";
+}
+
+const char *getScrollFontSizeName() {
+  return fontSizeName(scrollFontSize);
+}
+
+const char *getLogoFontSizeName() {
+  return fontSizeName(logoFontSize);
+}
+
+static const char *fontStyleName(uint8_t style) {
+  switch (style) {
+    case FONT_STYLE_BOLD:  return "FETT";
+    case FONT_STYLE_WIDE:  return "BREIT";
+    case FONT_STYLE_BLOCK: return "BLOCK";
+    case FONT_STYLE_CLASSIC:
+    default:               return "KLASSISCH";
+  }
+}
+
+const char *getScrollFontStyleName() {
+  return fontStyleName(scrollFontStyle);
+}
+
+const char *getLogoFontStyleName() {
+  return fontStyleName(logoFontStyle);
 }
 
 const char *getScrollTextColorName() {

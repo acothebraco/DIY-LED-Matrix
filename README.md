@@ -1,6 +1,6 @@
 # SmartFix Matrix
 
-A modular ESP32-S3 firmware for a SmartFix Elektronikservice LED matrix sign using a Waveshare ESP32-S3 RGB Matrix board and a 64×32 HUB75 RGB LED panel.
+A modular ESP32-S3 firmware for a SmartFix Elektronikservice LED matrix Screen using a Waveshare ESP32-S3 RGB Matrix board and a 64×32 HUB75 RGB LED panel.
 
 The display shows a custom SmartFix header, scrolling service text, pixel-art effects, random animations, configurable colors, brightness, WiFi settings, and OTA firmware updates from GitHub Releases. A GitHub Pages based web flasher is also included for easy USB installation directly from Chrome or Edge.
 

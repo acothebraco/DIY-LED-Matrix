@@ -60,6 +60,7 @@ extern String logoText;
 extern uint8_t panelCount;
 extern uint8_t matrixBrightness;
 extern uint16_t scrollInterval;
+extern uint16_t logoInterval;
 extern uint8_t scrollTextColorMode;
 extern uint8_t scrollTextEffectMode;
 extern uint8_t logoEffectMode;
@@ -82,6 +83,7 @@ extern bool firmwareUpdateAvailable;
 
 const char *getModeName(DisplayMode mode);
 const char *getSpeedName();
+const char *getLogoSpeedName();
 const char *getScrollTextColorName();
 const char *getScrollTextEffectName();
 const char *getLogoEffectName();

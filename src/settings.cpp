@@ -46,6 +46,11 @@ void loadSettings() {
     scrollInterval = DEFAULT_SCROLL_INTERVAL;
   }
 
+  logoInterval = prefs.getUShort("logoSpeed", scrollInterval);
+  if (logoInterval < 5 || logoInterval > 200) {
+    logoInterval = DEFAULT_LOGO_INTERVAL;
+  }
+
   scrollText = prefs.getString("text", scrollText);
   if (scrollText.length() == 0) {
     scrollText = "ELEKTRONIKSERVICE  -  REPARATUR  -  KONSOLEN  -  SMARTFIX  ";
@@ -98,6 +103,9 @@ void loadSettings() {
   Serial.print("Scroll Speed: ");
   Serial.print(scrollInterval);
   Serial.println(" ms");
+  Serial.print("Logo Speed: ");
+  Serial.print(logoInterval);
+  Serial.println(" ms");
   Serial.print("Scroll Text: ");
   Serial.println(scrollText);
   Serial.print("Logo Text: ");
@@ -138,6 +146,13 @@ void saveSpeedSetting() {
   prefs.putUShort("speed", scrollInterval);
   Serial.print("Scroll speed saved: ");
   Serial.print(scrollInterval);
+  Serial.println(" ms");
+}
+
+void saveLogoSpeedSetting() {
+  prefs.putUShort("logoSpeed", logoInterval);
+  Serial.print("Logo speed saved: ");
+  Serial.print(logoInterval);
   Serial.println(" ms");
 }
 

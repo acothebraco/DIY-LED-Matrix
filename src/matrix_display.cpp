@@ -216,7 +216,7 @@ static uint8_t clampScale(uint16_t value) {
 }
 
 static uint16_t logoSpeedStep(uint16_t multiplier = 1) {
-  uint16_t step = scrollInterval * multiplier;
+  uint16_t step = logoInterval * multiplier;
   if (step < 8) step = 8;
   if (step > 240) step = 240;
   return step;

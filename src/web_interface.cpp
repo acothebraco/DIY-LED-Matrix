@@ -216,12 +216,13 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
 })();
 
 (function(){
-  function fastAction(href){return /^(\/mode|\/brightness|\/speed|\/text-color|\/scroll-effect|\/logo-effect|\/logo-color|\/panels|\/auto)(\?|$)/.test(href||'');}
+  function fastAction(href){return /^(\/mode|\/brightness|\/speed|\/logo-speed|\/text-color|\/scroll-effect|\/logo-effect|\/logo-color|\/panels|\/auto)(\?|$)/.test(href||'');}
   function withAjax(href){return href+(href.indexOf('?')>=0?'&':'?')+'_ajax=1&_t='+(Date.now());}
   function toast(msg){var t=document.getElementById('sfToast');if(!t){return;}t.textContent=msg;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(function(){t.classList.remove('show');},1250);}
   function updatePreviewFromUrl(href){
     try{var u=new URL(href,location.origin),p=window.sfPreview||{};
       if(u.pathname==='/speed')p.speed=u.searchParams.get('v')||p.speed;
+      else if(u.pathname==='/logo-speed')p.logoSpeed=u.searchParams.get('v')||p.logoSpeed;
       else if(u.pathname==='/text-color')p.scrollColor=u.searchParams.get('c')||p.scrollColor;
       else if(u.pathname==='/scroll-effect')p.scrollEffect=u.searchParams.get('e')||p.scrollEffect;
       else if(u.pathname==='/logo-effect')p.logoEffect=u.searchParams.get('e')||p.logoEffect;
@@ -333,7 +334,7 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
     for(var i=0;i<chars.length;i++){var ch=chars[i];if(ch===' '||ch==='-'||ch==='_'){txt(ctx,ch,cx,y,logoMain(word,scale));cx+=6;if(ch!==' ')word++;continue;}txt(ctx,ch,cx+1,y+1,logoShadow(word,scale));txt(ctx,ch,cx,y,logoMain(word,scale));if(shimmer===i)txt(ctx,ch,cx,y,rgba(colors[0],scale));cx+=(ch==='ß'?12:6);}
   }
   function triangle(phase,amp){phase=phase%24;if(phase>12)phase=24-phase;return Math.round((phase*amp*2/12)-amp);}
-  function logoStep(mult){var p=state(),s=parseInt(p.speed||35)*(mult||1);return clamp(s,8,240);}
+  function logoStep(mult){var p=state(),s=parseInt(p.logoSpeed||35)*(mult||1);return clamp(s,8,240);}
   function waveLogo(ctx,t,x,y,brandMode,scale,bounce,now){
     var chars=glyphs(t),cx=x,global=bounce?triangle(Math.floor(now/logoStep(2)),2):0;
     for(var i=0;i<chars.length;i++){var ch=chars[i],part=brandMode?(i<5?0:1):0,yy=y+global;if(!bounce)yy=y+triangle(Math.floor(now/logoStep(2))+i*3,2);txt(ctx,ch,cx+1,yy+1,logoShadow(part,scale));txt(ctx,ch,cx,yy,brandMode?brandMain(part,scale):logoMain(part,scale));cx+=(ch==='ß'?12:6);if(brandMode&&i===4)cx+=2;}
@@ -424,6 +425,7 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += "logoEffect:" + String(logoEffectMode) + ",";
   page += "logoColor:" + String(logoColorMode) + ",";
   page += "speed:" + String(scrollInterval) + ",";
+  page += "logoSpeed:" + String(logoInterval) + ",";
   page += "panelCount:" + String(panelCount);
   page += "};</script>";
   page += "</head><body><div class='wrap'>";
@@ -444,7 +446,7 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += "<div class='pill'><div class='label'>" + L("Auto Demo", "Auto demo") + "</div><div class='value'>" + autoStatus + "</div></div>";
   page += "<div class='pill'><div class='label'>" + L("Helligkeit", "Brightness") + "</div><div class='value'>" + String(matrixBrightness) + " / 255</div></div>";
   page += "<div class='pill'><div class='label'>" + L("Laufschrift", "Scroll") + "</div><div class='value'>" + String(getSpeedName()) + " / " + String(getScrollTextEffectName()) + "</div></div>";
-  page += "<div class='pill'><div class='label'>Logo</div><div class='value'>" + String(getLogoEffectName()) + " / " + String(getLogoColorName()) + "</div></div>";
+  page += "<div class='pill'><div class='label'>Logo</div><div class='value'>" + String(getLogoSpeedName()) + " / " + String(getLogoEffectName()) + "</div></div>";
   page += "<div class='pill'><div class='label'>" + L("Textfarbe", "Text color") + "</div><div class='value'>" + String(getScrollTextColorName()) + "</div></div>";
   page += "<div class='pill'><div class='label'>" + L("Heim WLAN", "Home WiFi") + "</div><div class='value'>" + getWiFiStatusText() + "<br>" + htmlEscape(getStaIpText()) + "</div></div>";
   page += "<div class='pill'><div class='label'>" + L("mDNS Adresse", "mDNS address") + "</div><div class='value'>" + htmlEscape(getMdnsAddressText()) + "</div></div>";
@@ -526,11 +528,11 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
   page += htmlButton(L("Beidseitiges Sliden", "Two-way slide"), "/logo-effect?e=11");
   page += htmlButton("Refresh", "/");
   page += "</div><h2>" + L("Logo Geschwindigkeit", "Logo speed") + "</h2><div class='buttons'>";
-  page += htmlButton(L("Langsam", "Slow"), "/speed?v=70&target=logo");
-  page += htmlButton(L("Mittel", "Medium"), "/speed?v=35&target=logo");
-  page += htmlButton(L("Schnell", "Fast"), "/speed?v=18&target=logo");
-  page += htmlButton("Turbo", "/speed?v=8&target=logo");
-  page += "</div><div class='hint'>" + L("Logo und Laufschrift verwenden dieselbe Geschwindigkeitseinstellung.", "Logo and scrolling text use the same speed setting.") + "</div>";
+  page += htmlButton(L("Langsam", "Slow"), "/logo-speed?v=70");
+  page += htmlButton(L("Mittel", "Medium"), "/logo-speed?v=35");
+  page += htmlButton(L("Schnell", "Fast"), "/logo-speed?v=18");
+  page += htmlButton("Turbo", "/logo-speed?v=8");
+  page += "</div><div class='hint'>" + L("Logo Geschwindigkeit und Laufschrift Geschwindigkeit sind jetzt getrennt gespeichert.", "Logo speed and scrolling text speed are now saved separately.") + "</div>";
   page += "<h2>" + L("Logo Farbe", "Logo color") + "</h2><div class='buttons'>";
   page += htmlButton("Auto / Brand", "/logo-color?c=0");
   page += htmlButton(L("Grün", "Green"), "/logo-color?c=1");
@@ -767,14 +769,31 @@ static void handleSpeed() {
     saveSpeedSetting();
 
     autoModeDemo = false;
-    if (server.hasArg("target") && server.arg("target") == "logo") {
-      clearDisplay();
-    } else {
-      setMode(MODE_SCROLL_TEXT, true);
-    }
+    setMode(MODE_SCROLL_TEXT, true);
 
-    Serial.print("Speed changed to: ");
+    Serial.print("Scroll speed changed to: ");
     Serial.print(scrollInterval);
+    Serial.println(" ms");
+  }
+
+  redirectHome();
+}
+
+static void handleLogoSpeed() {
+  if (server.hasArg("v")) {
+    int value = server.arg("v").toInt();
+
+    if (value < 5) value = 5;
+    if (value > 200) value = 200;
+
+    logoInterval = (uint16_t)value;
+    saveLogoSpeedSetting();
+
+    autoModeDemo = false;
+    clearDisplay();
+
+    Serial.print("Logo speed changed to: ");
+    Serial.print(logoInterval);
     Serial.println(" ms");
   }
 
@@ -1063,6 +1082,7 @@ void setupWebServer() {
   server.on("/auto", HTTP_GET, handleAutoDemo);
   server.on("/brightness", HTTP_GET, handleBrightness);
   server.on("/speed", HTTP_GET, handleSpeed);
+  server.on("/logo-speed", HTTP_GET, handleLogoSpeed);
   server.on("/text-color", HTTP_GET, handleTextColor);
   server.on("/scroll-effect", HTTP_GET, handleScrollEffect);
   server.on("/logo-effect", HTTP_GET, handleLogoEffect);

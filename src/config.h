@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 // SmartFix Matrix firmware
-#define FIRMWARE_VERSION "1.4.8"
+#define FIRMWARE_VERSION "1.4.9"
 
 // Physical HUB75 panel setup.
 // PANEL_CHAIN is the maximum number of 64x32 panels connected side-by-side.
@@ -29,6 +29,7 @@ static const char PREF_NAMESPACE[] = "smartfix";
 // Defaults
 static const uint8_t DEFAULT_BRIGHTNESS = 70;
 static const uint16_t DEFAULT_SCROLL_INTERVAL = 35;
+static const uint16_t DEFAULT_LOGO_INTERVAL = 35;
 static const uint16_t MAX_SCROLL_TEXT_LEN = 160;
 static const uint16_t MAX_LOGO_TEXT_LEN = 160;
 

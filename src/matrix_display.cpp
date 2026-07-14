@@ -653,21 +653,45 @@ void drawHeader() {
       baseX = targetX - ((phase - 125) * (targetX + logoWidth + 6) / 45);
     }
   } else if (logoEffectMode == LOGO_EFFECT_DUAL_SLIDE) {
-    uint16_t phase = (millis() / logoSpeedStep()) % 220;
-    int16_t targetX = baseX;
-    int16_t textWidth = logoWidth;
+    // Full two-way slide cycle:
+    // right -> center -> fully out left -> left -> center -> fully out right.
+    // The previous version jumped back as soon as the last letter reached the edge.
+    const uint16_t slideTicks = 64;
+    const uint16_t holdTicks = 28;
+    const uint16_t slideMax = slideTicks - 1;
+    const uint16_t cycleTicks = (slideTicks * 4) + (holdTicks * 2);
+    uint16_t phase = (millis() / logoSpeedStep()) % cycleTicks;
 
-    if (phase < 55) {
-      // Slide in from the right.
-      baseX = getMatrixWidth() - ((getMatrixWidth() - targetX) * phase / 55);
-    } else if (phase < 110) {
+    int16_t targetX = baseX;
+    int16_t offLeft = -logoWidth - 2;
+    int16_t offRight = getMatrixWidth() + 2;
+
+    auto slidePos = [slideMax](int16_t fromX, int16_t toX, uint16_t p) -> int16_t {
+      if (p >= slideMax) return toX;
+      return fromX + ((int32_t)(toX - fromX) * p / slideMax);
+    };
+
+    if (phase < slideTicks) {
+      // Slide in from the right and stop centered.
+      baseX = slidePos(offRight, targetX, phase);
+    } else if (phase < slideTicks + holdTicks) {
+      // Short centered pause.
       baseX = targetX;
-    } else if (phase < 165) {
-      // Slide out to the right.
-      baseX = targetX + ((phase - 110) * (getMatrixWidth() - targetX + 2) / 55);
+    } else if (phase < (slideTicks * 2) + holdTicks) {
+      // Slide completely out to the left.
+      uint16_t p = phase - (slideTicks + holdTicks);
+      baseX = slidePos(targetX, offLeft, p);
+    } else if (phase < (slideTicks * 3) + holdTicks) {
+      // Slide in from the left and stop centered.
+      uint16_t p = phase - ((slideTicks * 2) + holdTicks);
+      baseX = slidePos(offLeft, targetX, p);
+    } else if (phase < (slideTicks * 3) + (holdTicks * 2)) {
+      // Short centered pause.
+      baseX = targetX;
     } else {
-      // Slide in from the left.
-      baseX = -textWidth + (((int32_t)(targetX + textWidth) * (phase - 165)) / 55);
+      // Slide completely out to the right.
+      uint16_t p = phase - ((slideTicks * 3) + (holdTicks * 2));
+      baseX = slidePos(targetX, offRight, p);
     }
   } else if (logoEffectMode == LOGO_EFFECT_SHIMMER) {
     shimmerIndex = (millis() / logoSpeedStep(3)) % (totalChars + 4);

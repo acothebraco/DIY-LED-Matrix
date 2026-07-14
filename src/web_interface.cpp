@@ -396,7 +396,17 @@ a{color:inherit}.wrap{max-width:940px;margin:0 auto;padding:22px}.hero{position:
     if(effect===1){var ph=Math.floor(now/logoStep(5))%(total+8);reveal=Math.min(ph,total);} 
     else if(effect===2){var ph2=Math.floor(now/logoStep())%512;if(ph2>255)ph2=511-ph2;scale=50+Math.round(ph2*205/255);} 
     else if(effect===3){var ph3=Math.floor(now/logoStep())%170,target=baseX;if(ph3<55)baseX=W-((W-target)*ph3/55);else if(ph3>125)baseX=target-((ph3-125)*(target+lw+6)/45);} 
-    else if(effect===11){var ph11=Math.floor(now/logoStep())%220,target11=baseX,w=lw;if(ph11<55)baseX=W-((W-target11)*ph11/55);else if(ph11<110)baseX=target11;else if(ph11<165)baseX=target11+((ph11-110)*(W-target11+2)/55);else baseX=-w+(((target11+w)*(ph11-165))/55);} 
+    else if(effect===11){
+      var slideTicks=64,holdTicks=28,slideMax=slideTicks-1,cycleTicks=(slideTicks*4)+(holdTicks*2);
+      var ph11=Math.floor(now/logoStep())%cycleTicks,target11=baseX,offLeft=-lw-2,offRight=W+2;
+      function slidePos(a,b,p){if(p>=slideMax)return b;return a+((b-a)*p/slideMax);}
+      if(ph11<slideTicks)baseX=slidePos(offRight,target11,ph11);
+      else if(ph11<slideTicks+holdTicks)baseX=target11;
+      else if(ph11<(slideTicks*2)+holdTicks)baseX=slidePos(target11,offLeft,ph11-(slideTicks+holdTicks));
+      else if(ph11<(slideTicks*3)+holdTicks)baseX=slidePos(offLeft,target11,ph11-((slideTicks*2)+holdTicks));
+      else if(ph11<(slideTicks*3)+(holdTicks*2))baseX=target11;
+      else baseX=slidePos(target11,offRight,ph11-((slideTicks*3)+(holdTicks*2)));
+    } 
     else if(effect===4){var sh=Math.floor(now/logoStep(3))%(total+4);if(sh<total)shimmer=sh;} 
     else if(effect===6){var ph6=Math.floor(now/logoStep())%512;if(ph6>255)ph6=511-ph6;scale=150+Math.round(ph6*105/255);} 
     if(effect===7)waveLogo(ctx,renderText,baseX,baseY,brandMode,scale,false,now);
